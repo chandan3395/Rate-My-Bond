@@ -1,0 +1,777 @@
+# 🧾 RateMyBond — Full Codebase Explanation & Learning Roadmap
+
+> Written for a 2nd-year student who built this with AI.
+> Use this document to **understand everything that is happening** in your own project.
+
+---
+
+## 📁 What Did You Build?
+
+**RateMyBond** is a full-stack-ready SaaS web application for evaluating financial bonds. Think of it like an AI-powered credit scoring tool — you input details about a bond (debt levels, cash flows, coupon rate etc.) and the app calculates an indicative rating: AAA, AA, A, BBB, BB, or Junk.
+
+The app has:
+- A **landing page** (marketing page to attract users)
+- A **bond calculator** (the core product)
+- A **sign-in page** (Google OAuth via Firebase)
+- **Static legal pages** (Terms, Privacy, Cookies, About, Help)
+- A **cookie consent banner** (GDPR-style)
+- A **terms modal** (gates access to the calculator)
+
+---
+
+## 🗂 Project Structure
+
+```
+Rate My Bond/
+├── index.html              ← HTML entry point (the single page)
+├── vite.config.js          ← Build tool configuration
+├── tailwind.config.js      ← Tailwind CSS configuration
+├── postcss.config.js       ← PostCSS (required by Tailwind)
+├── package.json            ← Lists all dependencies
+├── .env                    ← Secret keys (Firebase credentials)
+└── src/
+    ├── main.jsx            ← App bootstrap / entry point
+    ├── App.jsx             ← Root component + routing
+    ├── index.css           ← Global styles
+    ├── components/         ← Reusable UI pieces
+    │   ├── Navbar.jsx
+    │   ├── Hero.jsx
+    │   ├── Steps.jsx
+    │   ├── Features.jsx
+    │   ├── Preview.jsx
+    │   ├── CTA.jsx
+    │   ├── Footer.jsx
+    │   ├── Logo.jsx
+    │   ├── SitePreferencesBanner.jsx
+    │   └── TermsConsentModal.jsx
+    ├── pages/              ← Full-page views
+    │   ├── LandingPage.jsx
+    │   ├── BondCalculatorPage.jsx
+    │   ├── SignInPage.jsx
+    │   └── StaticPage.jsx
+    ├── data/
+    │   └── ratingModel.js  ← All bond rating data and logic definitions
+    └── lib/
+        └── firebase.js     ← Firebase app initialisation
+```
+
+---
+
+## 🧱 The Technology Stack (and Why Each Was Used)
+
+| Technology | What It Is | Why Used Here |
+|---|---|---|
+| **React 18** | JavaScript UI library | Build components and manage state |
+| **Vite** | Build tool & dev server | Super-fast local development |
+| **React Router v6** | Client-side routing library | Navigate between pages without page reload |
+| **Tailwind CSS** | Utility-first CSS framework | Style everything using class names |
+| **Firebase** | Backend-as-a-service (Google) | Google OAuth sign-in |
+| **PostCSS** | CSS transformer | Required for Tailwind to work |
+
+---
+
+## 🧠 PART 1 — React Concepts You Must Know
+
+### 1.1 What is JSX?
+
+Every `.jsx` file mixes HTML and JavaScript together. This is called **JSX**.
+
+```jsx
+// This looks like HTML but it's actually JavaScript
+function Hero() {
+  return (
+    <section id="home">
+      <h1>Understand bond risk in seconds</h1>
+    </section>
+  );
+}
+```
+
+> **Rule:** Every component must return a **single root element**. Use `<>...</>` (called a **Fragment**) to wrap multiple elements without adding an extra div.
+
+---
+
+### 1.2 Components
+
+A **component** is just a JavaScript function that returns JSX.
+
+In your project, every file in `src/components/` and `src/pages/` is a component.
+
+```jsx
+// Navbar.jsx - a component
+function Navbar({ onStartRating }) {
+  return <header>...</header>;
+}
+
+export default Navbar; // must export it to use it elsewhere
+```
+
+**Naming convention:** Always start with a Capital letter. `navbar` would be wrong — React would treat it as a regular HTML tag.
+
+---
+
+### 1.3 Props (Properties)
+
+Props are how you **pass data from a parent component to a child component**. They go in like HTML attributes.
+
+```jsx
+// Parent (App.jsx) passes a function down to Navbar
+<Navbar onStartRating={openTermsModal} />
+
+// Child (Navbar.jsx) receives it in its function argument
+function Navbar({ onStartRating }) {
+  return (
+    <button onClick={onStartRating}>Start Rating</button>
+  );
+}
+```
+
+In your project this pattern appears everywhere:
+- `App.jsx` → `Navbar` passes `onStartRating`
+- `App.jsx` → `LandingPage` passes `onStartRating`
+- `App.jsx` → `TermsConsentModal` passes `isOpen`, `onClose`, `onAccept`
+
+**Spread props** — in `App.jsx`, when rendering static pages:
+```jsx
+<StaticPage {...staticPages.about} />
+// This is shorthand for:
+<StaticPage eyebrow="Company" title="About Rate My Bond" description={[...]} />
+```
+
+---
+
+### 1.4 useState — The Most Important Hook
+
+`useState` lets a component **remember information** between renders.
+
+```jsx
+const [menuOpen, setMenuOpen] = useState(false);
+//     ↑ current value   ↑ function to update it   ↑ initial value
+```
+
+**Real examples in your code:**
+
+```jsx
+// Navbar.jsx — remembers if mobile menu is open or closed
+const [menuOpen, setMenuOpen] = useState(false);
+
+// Toggle it:
+onClick={() => setMenuOpen((value) => !value)}
+```
+
+```jsx
+// BondCalculatorPage.jsx — stores all form input values
+const [values, setValues] = useState(emptyValues);
+
+// Update a specific field:
+const updateValue = (fieldId, nextValue) => {
+  setValues((current) => ({
+    ...current,           // keep all existing values
+    [fieldId]: nextValue, // update just this one field
+  }));
+};
+```
+
+> **Key rule:** Never mutate state directly (`values.field = "x"` is WRONG). Always call the setter function.
+
+---
+
+### 1.5 useEffect — Running Code at the Right Time
+
+`useEffect` runs **side effects** — code that happens AFTER the component renders. Common uses: fetching data, reading from localStorage, subscriptions.
+
+```jsx
+// SitePreferencesBanner.jsx — check localStorage when the component first loads
+useEffect(() => {
+  const saved = window.localStorage.getItem("rate-my-bond-cookie-consent");
+  if (!saved) {
+    setIsConsentOpen(true); // show the banner if no consent saved
+  }
+}, []); // ← the empty [] means "run only once, when component mounts"
+```
+
+```jsx
+// SignInPage.jsx — subscribe to Firebase auth state changes
+useEffect(() => {
+  const unsubscribe = onAuthStateChanged(auth, (nextUser) => {
+    setUser(nextUser);
+  });
+  return unsubscribe; // ← cleanup function: unsubscribe when component unmounts
+}, []);
+```
+
+```jsx
+// TermsConsentModal.jsx — reset the checkbox every time the modal opens/closes
+useEffect(() => {
+  if (!isOpen) setAccepted(false);
+}, [isOpen]); // ← run whenever 'isOpen' changes
+```
+
+**The dependency array `[]` controls when useEffect runs:**
+- `[]` → run once on mount
+- `[someValue]` → run whenever `someValue` changes
+- no array → run after every render (usually unwanted)
+
+---
+
+### 1.6 Conditional Rendering
+
+Showing or hiding elements based on state/props.
+
+```jsx
+// Pattern 1: Ternary (if/else)
+{menuOpen ? <MobileMenu /> : null}
+
+// Pattern 2: Short-circuit (if only)
+{errorMessage && <p>{errorMessage}</p>}
+
+// Pattern 3: Early return (used in TermsConsentModal)
+if (!isOpen) return null;
+```
+
+---
+
+### 1.7 Lists and the key Prop
+
+When you render an array, React needs a unique `key` on each item.
+
+```jsx
+// Navbar.jsx
+{navItems.map((item) => (
+  <Link key={item.label} to={item.to}>
+    {item.label}
+  </Link>
+))}
+```
+
+> **Why keys?** React uses them to track which items changed/added/removed when the list re-renders. Without `key`, React can't do this efficiently and might show wrong data.
+
+---
+
+### 1.8 Event Handling
+
+```jsx
+// onClick - button click
+<button onClick={handleGoogleSignIn}>Sign in</button>
+
+// onChange - input/select change
+<select onChange={(event) => onChange(field.id, event.target.value)}>
+
+// Event with inline arrow function
+<button onClick={() => setMenuOpen(false)}>Close</button>
+```
+
+---
+
+## 🗺 PART 2 — How React Router Works
+
+React Router makes your app behave like it has multiple pages, **without actually reloading the browser**.
+
+### 2.1 Setup (main.jsx)
+
+```jsx
+ReactDOM.createRoot(document.getElementById("root")).render(
+  <React.StrictMode>
+    <BrowserRouter>      {/* ← wraps the whole app */}
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>
+);
+```
+
+`BrowserRouter` gives the whole app access to routing.
+
+### 2.2 Defining Routes (App.jsx)
+
+```jsx
+<Routes>
+  <Route path="/"            element={<LandingPage />} />
+  <Route path="/calculator"  element={<BondCalculatorPage />} />
+  <Route path="/signin"      element={<SignInPage />} />
+  <Route path="/about"       element={<StaticPage {...staticPages.about} />} />
+  <Route path="*"            element={<LandingPage />} /> {/* 404 fallback */}
+</Routes>
+```
+
+`path="*"` is the wildcard — it catches any URL that doesn't match the others.
+
+### 2.3 Navigation
+
+```jsx
+// Link — like <a href> but doesn't reload the page
+import { Link } from "react-router-dom";
+<Link to="/calculator">Open calculator</Link>
+
+// useNavigate — programmatic navigation (navigate in code)
+const navigate = useNavigate();
+navigate("/calculator"); // used in acceptTermsAndContinue()
+```
+
+### 2.4 Reading the Current URL (useLocation)
+
+```jsx
+// App.jsx — ScrollToHash component
+const location = useLocation();
+
+useEffect(() => {
+  if (location.hash) {
+    // e.g. location.hash = "#how-it-works"
+    const id = location.hash.replace("#", "");
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+  }
+}, [location.hash, location.pathname]);
+```
+
+This is how clicking "How it Works" in the Navbar smoothly scrolls to that section on the landing page.
+
+---
+
+## 🔥 PART 3 — Firebase Authentication
+
+Firebase is Google's backend service. You used it for **Google Sign-In** (OAuth).
+
+### 3.1 Configuration (lib/firebase.js)
+
+```js
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,   // reads from .env file
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  // ...
+};
+```
+
+`import.meta.env.VITE_*` is how Vite reads environment variables from `.env`. The `VITE_` prefix is required — Vite won't expose variables without it.
+
+**Defensive initialisation:**
+```js
+const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+
+if (hasFirebaseConfig) {
+  const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  googleProvider = new GoogleAuthProvider();
+}
+```
+
+`getApps().length ? getApp() : initializeApp(...)` — This prevents initializing Firebase twice (which would crash it). If it's already initialized, get the existing instance.
+
+### 3.2 Sign In / Sign Out (SignInPage.jsx)
+
+```js
+// Sign in with Google popup
+await signInWithPopup(auth, googleProvider);
+
+// Sign out
+await signOut(auth);
+
+// Listen for auth state changes (is user logged in or not?)
+onAuthStateChanged(auth, (nextUser) => {
+  setUser(nextUser); // nextUser is null if signed out
+});
+```
+
+The `onAuthStateChanged` listener is a **subscription** — it constantly watches Firebase and updates your component whenever the sign-in status changes. The `return unsubscribe` in your `useEffect` cleanup ensures this listener is removed when the page is unmounted.
+
+---
+
+## ⚙️ PART 4 — The Bond Rating Engine (ratingModel.js + BondCalculatorPage.jsx)
+
+This is the brain of your application.
+
+### 4.1 Data Structure (ratingModel.js)
+
+You defined all your data as **exported JavaScript objects/arrays**:
+
+```js
+export const groupWeights = {
+  financialStrength: 40,   // most important factor (40%)
+  ratios: 25,
+  cashFlow: 20,
+  bondStructure: 10,
+  riskFlags: 5,
+};
+```
+
+```js
+export const requiredSections = [
+  {
+    id: "financialStrength",
+    title: "Financial Strength",
+    fields: [
+      {
+        id: "totalDebtLevel",
+        label: "Total Debt Level",
+        type: "select",
+        group: "financialStrength",
+        options: [
+          { label: "Very Low", score: 5 },
+          { label: "Low", score: 4 },
+          // ...
+        ],
+      },
+    ],
+  },
+  // ...
+];
+```
+
+Each field has:
+- `id` — unique identifier (used as the form state key)
+- `label` — what the user sees
+- `type` — `"select"` or `"searchable"`
+- `group` — which weight category it belongs to
+- `options` — array of choices, each with a `score` (1–5)
+
+### 4.2 The Scoring Algorithm (BondCalculatorPage.jsx)
+
+**Step 1 — Build empty state from data:**
+```js
+const emptyValues = [...requiredFields, ...optionalFields].reduce(
+  (accumulator, field) => ({
+    ...accumulator,
+    [field.id]: "",
+  }),
+  {}
+);
+// Result: { totalDebtLevel: "", couponRate: "", ... }
+```
+
+`reduce` is an array method that "reduces" an array to a single value. Here it builds an object.
+
+**Step 2 — Calculate per-group scores:**
+```js
+const groupBreakdown = Object.entries(groupWeights).map(([group, weight]) => {
+  const fields = requiredFields.filter(f => f.group === group);
+  const scores = fields.map(f => findScore(f, values[f.id])).filter(Boolean);
+  const normalized = scores.length ? (sum(scores) / scores.length) * 20 : 0;
+  // Scores are 1–5, multiply by 20 to get 20–100 scale
+
+  return {
+    group, weight,
+    score: normalized,
+    weightedScore: (normalized * weight) / 100,
+  };
+});
+```
+
+**Step 3 — Combine weighted scores:**
+```js
+const requiredScore = groupBreakdown.reduce(
+  (total, item) => total + item.weightedScore, 0
+);
+// This is a weighted average
+```
+
+**Step 4 — Optional fields add a refinement adjustment (+/- 5 points):**
+```js
+const refinementAdjustment = Math.max(-5, Math.min(5, (optionalAverage - 3) * 2.5));
+```
+
+**Step 5 — Map final score → rating band:**
+```js
+function getRatingBand(score) {
+  if (score >= 85) return "AAA";
+  if (score >= 75) return "AA";
+  if (score >= 65) return "A";
+  if (score >= 55) return "BBB";
+  if (score >= 45) return "BB";
+  return "B / Junk";
+}
+```
+
+**Step 6 — Confidence % (how complete the form is):**
+```js
+confidence: Math.round(
+  (requiredCompletion / requiredFields.length) * 65 + optionalCompletion * 35
+);
+// Required fields = 65% of confidence, optional = 35%
+```
+
+### 4.3 The FieldControl Component
+
+A mini-component inside the calculator page that renders either a `<select>` or a searchable `<input>` with a `<datalist>`:
+
+```jsx
+function FieldControl({ field, value, onChange }) {
+  if (field.type === "searchable") {
+    return (
+      <>
+        <input list="issuer-options" value={value} ... />
+        <datalist id="issuer-options">
+          {issuerOptions.map(issuer => <option key={issuer} value={issuer} />)}
+        </datalist>
+      </>
+    );
+  }
+  return <select>...</select>;
+}
+```
+
+`<datalist>` is a native HTML element that provides autocomplete suggestions for an `<input>`.
+
+---
+
+## 🍪 PART 5 — Cookie Consent Banner (SitePreferencesBanner.jsx)
+
+This is a GDPR-compliant cookie preferences system. It uses `localStorage` to persist the user's choice.
+
+### Key Concepts:
+
+**localStorage** — browser storage that survives page refreshes:
+```js
+// Save to localStorage
+window.localStorage.setItem("key", JSON.stringify(data));
+
+// Read from localStorage
+const saved = window.localStorage.getItem("key");
+const parsed = JSON.parse(saved);
+```
+
+**The Toggle component** — a custom checkbox built from scratch:
+```jsx
+function Toggle({ checked, onChange, disabled = false }) {
+  return (
+    <button
+      role="switch"        // ARIA role for accessibility
+      aria-checked={checked}
+      onClick={onChange}
+    >
+      <span className={checked ? "translate-x-6" : "translate-x-1"} />
+      {/* The dot slides left/right using CSS transforms */}
+    </button>
+  );
+}
+```
+
+**Dynamic object key update:**
+```js
+const togglePreference = (key) => {
+  setPreferences((current) => ({
+    ...current,
+    [key]: !current[key], // [key] is a "computed property name"
+  }));
+};
+// togglePreference("analytics") → flips the analytics value
+```
+
+---
+
+## 📄 PART 6 — StaticPage (Reusable Pattern)
+
+This is a great example of a **data-driven component**. Instead of creating 5 separate page components (About, Privacy, Terms, Cookies, Help), you created ONE component that accepts data as props.
+
+```jsx
+// ONE component handles ALL these pages
+function StaticPage({ eyebrow, title, description }) {
+  const isStructuredDescription = Array.isArray(description);
+
+  return (
+    <main>
+      <h1>{title}</h1>
+      {isStructuredDescription
+        ? description.map(section => <section>...</section>)
+        : <p>{description}</p>
+      }
+    </main>
+  );
+}
+```
+
+All the page content lives in `App.jsx` as a data object:
+```js
+const staticPages = {
+  about: { title: "About Rate My Bond", description: [...], eyebrow: "Company" },
+  privacy: { title: "Privacy Policy", description: [...], eyebrow: "Legal" },
+  // ...
+};
+```
+
+This is called the **"render props" / data-driven UI** pattern and it's used heavily in professional codebases.
+
+---
+
+## 🎨 PART 7 — Tailwind CSS
+
+Tailwind CSS lets you style HTML elements using utility class names instead of writing separate CSS files.
+
+### Common Classes Used in Your Project
+
+| Class | What it does |
+|---|---|
+| `flex`, `grid` | Layout modes |
+| `items-center`, `justify-between` | Alignment |
+| `gap-4` | Space between flex/grid items |
+| `px-6`, `py-4` | Horizontal & vertical padding |
+| `rounded-full`, `rounded-2xl` | Border radius |
+| `text-white`, `text-sm`, `font-semibold` | Typography |
+| `border`, `border-white/10` | Border (with opacity) |
+| `bg-white/5` | Background (5% white opacity) |
+| `transition`, `hover:scale-[1.02]` | Animation on hover |
+| `hidden md:flex` | Hidden on mobile, flex on desktop |
+| `sticky top-0 z-50` | Sticky positioning |
+| `fixed inset-0` | Full-screen overlay |
+| `backdrop-blur-xl` | Glassmorphism blur effect |
+
+### Responsive Design
+
+Tailwind uses **breakpoint prefixes**:
+```jsx
+// default = mobile, md: = desktop
+className="hidden md:flex"
+// Hidden on mobile, flex on screens >= 768px
+
+className="grid-cols-1 lg:grid-cols-2"
+// 1 column on mobile, 2 columns on large screens
+```
+
+---
+
+## 🏗 PART 8 — Vite (Build Tool)
+
+**Vite** is the modern replacement for Create React App. It makes development fast.
+
+```js
+// vite.config.js
+export default defineConfig({
+  base: "./",          // relative paths (for deployment)
+  plugins: [react()],  // enables JSX transformation
+});
+```
+
+**Key commands:**
+```bash
+npm run dev     # start local development server (hot reload)
+npm run build   # build optimised files for production
+npm run preview # preview the production build locally
+```
+
+---
+
+## 🏛 PART 9 — Architecture Patterns Used
+
+### 9.1 Lifting State Up
+
+When multiple components need the same state, you **lift it up** to their common parent.
+
+```jsx
+// App.jsx controls the modal state
+const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
+
+// It passes the opener DOWN to Navbar AND LandingPage
+<Navbar onStartRating={openTermsModal} />
+<LandingPage onStartRating={openTermsModal} />
+
+// The modal itself also lives in App
+<TermsConsentModal isOpen={isTermsModalOpen} ... />
+```
+
+Both `Navbar` and `LandingPage` can open the same modal because the state lives in their shared parent `App`.
+
+### 9.2 Single Responsibility Components
+
+Each component does ONE thing:
+- `Logo.jsx` → renders the logo
+- `Hero.jsx` → the hero section
+- `FieldControl.jsx` → renders one form field
+- `Toggle.jsx` → renders one toggle switch
+
+### 9.3 Data Separated from UI
+
+Your data (`ratingModel.js`) is completely separate from the UI (`BondCalculatorPage.jsx`). The UI just reads from the data. This means if you want to add a new rating field, you only edit `ratingModel.js` — the UI automatically picks it up.
+
+### 9.4 Derived State (vs Stored State)
+
+In `BondCalculatorPage.jsx`:
+```js
+// STORED state — only the raw input values
+const [values, setValues] = useState(emptyValues);
+
+// DERIVED state — calculated from values on every render
+const model = calculateModel(values);
+```
+
+`model` is never stored in `useState`. It's recalculated every time `values` changes. This is a best practice — don't store things you can calculate.
+
+---
+
+## 🛣 PART 10 — Your Learning Roadmap
+
+Use this order to properly learn everything your project uses.
+
+### 🟢 Stage 1 — JavaScript Prerequisites (If Not Done)
+- [ ] `const`, `let`, arrow functions
+- [ ] Array methods: `map`, `filter`, `reduce`, `find`
+- [ ] Destructuring: `const { a, b } = obj`, `const [x, y] = arr`
+- [ ] Spread operator: `...arr`, `...obj`
+- [ ] Optional chaining: `obj?.prop`
+- [ ] Template literals: `` `Hello ${name}` ``
+- [ ] `async/await` and `try/catch`
+- [ ] ES Modules: `import`/`export`
+
+### 🟡 Stage 2 — React Core
+- [ ] What is a component? What is JSX?
+- [ ] Props — passing data down
+- [ ] `useState` — managing local state
+- [ ] Conditional rendering (`? :` and `&&`)
+- [ ] Rendering lists with `.map()` and `key` prop
+- [ ] Event handlers (`onClick`, `onChange`)
+- [ ] `useEffect` — side effects, dependency array
+- [ ] Component composition (children, prop drilling)
+- [ ] Lifting state up
+
+### 🟠 Stage 3 — React Ecosystem
+- [ ] React Router v6 — `Routes`, `Route`, `Link`, `useNavigate`, `useLocation`
+- [ ] Forms in React — controlled inputs (`value` + `onChange`)
+- [ ] Working with `localStorage`
+- [ ] Environment variables (`import.meta.env`)
+
+### 🔴 Stage 4 — Firebase
+- [ ] What is Firebase / BaaS?
+- [ ] Firebase Auth — `onAuthStateChanged`, `signInWithPopup`, `signOut`
+- [ ] Google OAuth flow
+- [ ] Firebase initialization & config
+
+### 🟣 Stage 5 — Styling & Build Tools
+- [ ] Tailwind CSS — utility classes, responsive prefixes
+- [ ] Glassmorphism (`backdrop-blur`, transparency)
+- [ ] Vite — what it does, `npm run dev` vs `npm run build`
+
+### ⚫ Stage 6 — Advanced Patterns (In Your Code)
+- [ ] Data-driven UI (your `StaticPage` + `staticPages` pattern)
+- [ ] Derived state vs stored state
+- [ ] Custom sub-components (`FieldControl`, `Toggle`)
+- [ ] Weighted scoring algorithm logic
+- [ ] ARIA accessibility attributes (`role="switch"`, `aria-checked`)
+
+---
+
+## 🔍 PART 11 — File-by-File Quick Reference
+
+| File | Role | Key Concepts |
+|---|---|---|
+| `main.jsx` | App entry point | `ReactDOM.createRoot`, `BrowserRouter`, `StrictMode` |
+| `App.jsx` | Root layout + routes | `Routes`, `Route`, `useState`, `useNavigate`, spread props |
+| `Navbar.jsx` | Top navigation | `useState`, `Link`, responsive hamburger menu |
+| `Hero.jsx` | Landing hero section | Props, event handling, Tailwind grid |
+| `SitePreferencesBanner.jsx` | Cookie consent | `useState`, `useEffect`, `localStorage`, custom `Toggle` component |
+| `TermsConsentModal.jsx` | Terms gate modal | Props, `useEffect`, controlled checkbox |
+| `StaticPage.jsx` | Reusable legal pages | `Array.isArray`, conditional rendering, spread props |
+| `LandingPage.jsx` | Landing page layout | Component composition |
+| `SignInPage.jsx` | Google sign-in page | Firebase Auth, `useEffect`, `async/await`, `onAuthStateChanged` |
+| `BondCalculatorPage.jsx` | Core product | Complex state, derived state, `reduce`, `map`, `filter` |
+| `ratingModel.js` | Data + weights | Pure data, `export const`, scoring algorithm |
+| `firebase.js` | Firebase setup | `initializeApp`, `getAuth`, environment variables |
+| `vite.config.js` | Build configuration | `defineConfig`, Vite plugins |
+
+---
+
+> [!TIP]
+> **Best next step:** Read through `BondCalculatorPage.jsx` line by line and trace how one field (e.g., `couponRate`) flows from: the data in `ratingModel.js` → the state in `useState` → the UI dropdown → the scoring algorithm → the displayed result. That single trace will teach you 80% of the patterns used in this project.
+
+> [!NOTE]
+> **What's missing from this project for production?**
+> - No backend — the rating runs entirely in the browser (anyone can see/modify the logic)
+> - No database — ratings are not saved
+> - Firebase is configured but sign-in doesn't gate the calculator yet
+> - No unit tests
+> These are all natural next steps to level up the project!
