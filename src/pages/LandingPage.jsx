@@ -4,14 +4,14 @@ import Features from "../components/Features";
 import Preview from "../components/Preview";
 import CTA from "../components/CTA";
 
-function LandingPage() {
+function LandingPage({ onStartRating }) {
   return (
     <main>
-      <Hero />
+      <Hero onStartRating={onStartRating} />
       <Steps />
       <Features />
       <Preview />
-      <CTA />
+      <CTA onStartRating={onStartRating} />
     </main>
   );
 }

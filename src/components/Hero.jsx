@@ -1,6 +1,4 @@
-import { Link } from "react-router-dom";
-
-function Hero() {
+function Hero({ onStartRating }) {
   return (
     <section className="px-6 py-16 lg:px-8 lg:py-24" id="home">
       <div className="mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-2">
@@ -14,12 +12,13 @@ function Hero() {
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <Link
-              to="/signin"
+            <button
+              type="button"
+              onClick={onStartRating}
               className="inline-flex items-center justify-center rounded-full bg-[#8fd7cf] px-6 py-3 text-sm font-semibold text-[#062021] shadow-soft transition hover:scale-[1.02] hover:bg-[#9fe5de]"
             >
               Start Rating
-            </Link>
+            </button>
             <a
               href="#how-it-works"
               className="inline-flex items-center justify-center rounded-full border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:border-white/30 hover:bg-white/5"
