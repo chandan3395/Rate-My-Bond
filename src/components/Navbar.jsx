@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-
+import { useAuth } from "../context/AuthContext";
+import { signOut } from "firebase/auth";       
+import { auth } from "../lib/firebase";         
 import Logo from "./Logo";
 
 const navItems = [
@@ -10,7 +12,12 @@ const navItems = [
 ];
 
 function Navbar({ onStartRating }) {
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    await signOut(auth);
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-[#081d1e]/80 backdrop-blur-xl">
@@ -31,20 +38,42 @@ function Navbar({ onStartRating }) {
           </nav>
 
           <div className="hidden items-center gap-3 md:flex">
-            <Link
-              to="/signin"
-              className="rounded-full border border-white/15 px-5 py-2 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/5"
-            >
-              Sign in
-            </Link>
-            <button
-              type="button"
-              onClick={onStartRating}
-              className="rounded-full bg-[#8fd7cf] px-5 py-2 text-sm font-semibold text-[#062021] shadow-soft transition hover:scale-[1.02] hover:bg-[#9fe5de]"
-            >
-              Start Rating
-            </button>
-          </div>
+  {user ? (
+    // Logged in — show avatar, name, and sign out
+    <div className="flex items-center gap-3">
+      <img
+        src={user.photoURL}
+        alt={user.displayName}
+        className="h-8 w-8 rounded-full border border-white/20"
+      />
+      <span className="text-sm text-white/75">{user.displayName}</span>
+      <button
+        type="button"
+        onClick={handleSignOut}
+        className="rounded-full border border-white/15 px-4 py-2 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/5"
+      >
+        Sign out
+      </button>
+    </div>
+  ) : (
+    // Not logged in — show original sign in + start rating buttons
+    <>
+      <Link
+        to="/signin"
+        className="rounded-full border border-white/15 px-5 py-2 text-sm font-medium text-white transition hover:border-white/30 hover:bg-white/5"
+      >
+        Sign in
+      </Link>
+      <button
+        type="button"
+        onClick={onStartRating}
+        className="rounded-full bg-[#8fd7cf] px-5 py-2 text-sm font-semibold text-[#062021] shadow-soft transition hover:scale-[1.02] hover:bg-[#9fe5de]"
+      >
+        Start Rating
+      </button>
+    </>
+  )}
+</div>
 
           <button
             type="button"

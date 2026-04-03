@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import SitePreferencesBanner from "./components/SitePreferencesBanner";
 import TermsConsentModal from "./components/TermsConsentModal";
-import LandingPage from "./pages/LandingPage";
-import SignInPage from "./pages/SignInPage";
-import StaticPage from "./pages/StaticPage";
-import BondCalculatorPage from "./pages/BondCalculatorPage";
 import staticPages from "./data/staticPages";
+import ProtectedRoute from "./components/ProtectedRoute";
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const SignInPage = lazy(() => import("./pages/SignInPage"));
+const StaticPage = lazy(() => import("./pages/StaticPage"));
+const BondCalculatorPage = lazy(() => import("./pages/BondCalculatorPage"));
 
 function ScrollToHash() {
   const location = useLocation();
@@ -60,32 +62,41 @@ function App() {
       <Navbar onStartRating={openTermsModal} />
       <ScrollToHash />
 
-      <Routes>
-        <Route
-          path="/"
-          element={<LandingPage onStartRating={openTermsModal} />}
-        />
-        <Route path="/calculator" element={<BondCalculatorPage />} />
-        <Route path="/signin" element={<SignInPage />} />
-        <Route
-          path="/about"
-          element={<StaticPage {...staticPages.about} />}
-        />
-        <Route path="/help" element={<StaticPage {...staticPages.help} />} />
-        <Route
-          path="/privacy"
-          element={<StaticPage {...staticPages.privacy} />}
-        />
-        <Route path="/terms" element={<StaticPage {...staticPages.terms} />} />
-        <Route
-          path="/cookies"
-          element={<StaticPage {...staticPages.cookies} />}
-        />
-        <Route
-          path="*"
-          element={<LandingPage onStartRating={openTermsModal} />}
-        />
-      </Routes>
+      <Suspense fallback={<div className="px-6 py-16 text-white/70">Loading...</div>}>
+        <Routes>
+          <Route
+            path="/"
+            element={<LandingPage onStartRating={openTermsModal} />}
+          />
+          <Route
+            path="/calculator"
+            element={
+              <ProtectedRoute>
+                <BondCalculatorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/signin" element={<SignInPage />} />
+          <Route
+            path="/about"
+            element={<StaticPage {...staticPages.about} />}
+          />
+          <Route path="/help" element={<StaticPage {...staticPages.help} />} />
+          <Route
+            path="/privacy"
+            element={<StaticPage {...staticPages.privacy} />}
+          />
+          <Route path="/terms" element={<StaticPage {...staticPages.terms} />} />
+          <Route
+            path="/cookies"
+            element={<StaticPage {...staticPages.cookies} />}
+          />
+          <Route
+            path="*"
+            element={<LandingPage onStartRating={openTermsModal} />}
+          />
+        </Routes>
+      </Suspense>
 
       <SitePreferencesBanner />
       <TermsConsentModal
