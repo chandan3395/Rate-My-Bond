@@ -60,13 +60,28 @@ export const returnPreferenceOptions = [
   { label: "Maturity Focused", value: "Maturity Focused" },
 ];
 
+const creditRatingBadgeMap = {
+  AAA: "bg-[#67d391]/15 text-[#b6efc7] border-[#67d391]/25",
+  "AA+": "bg-[#7edba9]/15 text-[#c6f2d5] border-[#7edba9]/25",
+  AA: "bg-[#8fd7cf]/15 text-[#d5f5f1] border-[#8fd7cf]/25",
+  "AA-": "bg-[#8fd7cf]/15 text-[#d5f5f1] border-[#8fd7cf]/25",
+  "A+": "bg-[#d5f2de]/15 text-[#e4f8ea] border-[#d5f2de]/25",
+  A: "bg-[#d5f2de]/15 text-[#e4f8ea] border-[#d5f2de]/25",
+  "A-": "bg-[#d5f2de]/15 text-[#e4f8ea] border-[#d5f2de]/25",
+  "BBB+": "bg-[#f2c66d]/15 text-[#f6dfb2] border-[#f2c66d]/25",
+  BBB: "bg-[#f2c66d]/15 text-[#f6dfb2] border-[#f2c66d]/25",
+  "BBB-": "bg-[#f2c66d]/15 text-[#f6dfb2] border-[#f2c66d]/25",
+  "BB and below": "bg-[#f39a8d]/15 text-[#f7c1b8] border-[#f39a8d]/25",
+  "Not sure": "bg-white/5 text-white/65 border-white/10",
+};
+
 export const userIntentFields = [
   {
     id: "amount",
     label: "How much do you want to invest?",
     type: "amount",
     required: true,
-    tooltip: "Used to understand position size and exposure.",
+    tooltip: "How much capital you want to put into this bond.",
     meaning: "How much capital you plan to allocate to this bond.",
     details:
       "This does not directly change bond quality, but it affects concentration risk. Larger allocations to risky bonds deserve more caution.",
@@ -85,7 +100,7 @@ export const userIntentFields = [
     label: "How long can you stay invested?",
     type: "dropdown",
     required: true,
-    tooltip: "Used to compare your time horizon with bond maturity.",
+    tooltip: "How long you can realistically stay invested without needing the money back.",
     meaning: "How long you can realistically stay invested without needing the money back.",
     details:
       "A mismatch between your horizon and the bond tenure increases risk, especially if liquidity is weak.",
@@ -102,7 +117,7 @@ export const userIntentFields = [
     label: "What level of risk are you comfortable with?",
     type: "cards",
     required: true,
-    tooltip: "Used to filter bonds that exceed your risk comfort.",
+    tooltip: "Your comfort level with default risk and price uncertainty.",
     meaning: "Your comfort level with default risk and price uncertainty.",
     details:
       "Higher-yield bonds can look attractive, but they may be a poor fit if you prefer low-risk investing.",
@@ -119,7 +134,7 @@ export const userIntentFields = [
     label: "How do you want returns?",
     type: "toggle",
     required: true,
-    tooltip: "Used to match payout style with your cashflow needs.",
+    tooltip: "Whether you want regular income or returns at maturity.",
     meaning: "Whether you need regular income or prefer returns at maturity.",
     details:
       "Monthly or quarterly payouts help income-focused investors, while cumulative structures suit those who can wait.",
@@ -145,8 +160,8 @@ export const bondDetailFields = [
       "Issuer quality is one of the strongest indicators of repayment reliability. Once selected, other fields can be auto-detected from issuer data.",
     example: "A large PSU and a small NBFC can have very different risk even if coupons look similar.",
     howToChoose:
-      "Search and select the issuer from the bond listing. If unsure, you can choose a sample issuer first.",
-    backendNote: "Primary key for data enrichment.",
+      "Search the issuer name exactly as shown on the bond listing. Once selected, the system can auto-fill the connected fields.",
+    backendNote: "Pulls issuer-linked financial and risk data for enrichment.",
     options: Object.keys(issuerCatalog),
     notSureValue: "Northstar Utilities",
     autoValue: "Northstar Utilities",
@@ -156,13 +171,13 @@ export const bondDetailFields = [
     label: "Issuer type",
     type: "dropdown",
     required: true,
-    tooltip: "Used to adjust sector-specific risk.",
+    tooltip: "What kind of company the issuer is.",
     meaning: "The category of company issuing the bond.",
     details:
-      "PSUs and utilities are often more stable than cyclicals, startups, or stressed NBFCs.",
+      "PSU issuers are often government-linked and generally safer. NBFCs carry moderate risk. Real estate and stressed sectors can be riskier.",
     example: "NBFC bonds may offer higher returns because sector risk is higher.",
     howToChoose:
-      "Auto-detect it after selecting the issuer. Change only if the platform listing clearly says something else.",
+      "This is usually auto-filled after you select the issuer. Change it only if the listing clearly shows something different.",
     backendNote: "Sector risk multiplier.",
     options: [
       "PSU / Utility",
@@ -184,12 +199,12 @@ export const bondDetailFields = [
     tooltip: "How safe the bond is considered by rating agencies.",
     meaning: "A shorthand signal of the issuer's repayment strength.",
     details:
-      "AAA means very strong repayment ability. Lower ratings imply higher default probability and greater sensitivity to stress.",
+      "Credit rating reflects the issuer's ability to repay. AAA means very strong repayment ability. Lower ratings mean higher default risk, and ratings can change over time.",
     example:
-      "An AA bond at 9% versus an A bond at 11% usually reflects a risk-return tradeoff.",
+      "An AA bond at 9% versus an A bond at 11% usually means the higher return comes with higher risk.",
     howToChoose:
-      "Copy the rating shown on the bond page. If you do not know it, choose Not sure or Auto-detect.",
-    backendNote: "Base default probability proxy.",
+      "Copy the rating from the bond page. If you do not see it clearly, use Not sure and let the system estimate.",
+    backendNote: "Maps to the base default probability proxy.",
     options: [
       "AAA",
       "AA+",
@@ -204,6 +219,8 @@ export const bondDetailFields = [
       "BB and below",
       "Not sure",
     ],
+    badgeMap: creditRatingBadgeMap,
+    badgeLegend: ["AAA", "AA", "A", "BBB", "BB and below", "Not sure"],
     notSureValue: "Not sure",
     autoValue: (values) =>
       issuerCatalog[values.issuer]?.creditRating || "Not sure",
@@ -216,12 +233,12 @@ export const bondDetailFields = [
     tooltip: "What kind of bond structure this is.",
     meaning: "The structural format of the instrument.",
     details:
-      "Secured NCDs are usually easier to understand. Unsecured NCDs carry higher risk. MLDs can be more complex because returns depend on market outcomes.",
+      "Secured NCDs are backed by assets and are usually easier to understand. Unsecured NCDs have no asset backing and carry higher risk. MLDs are market-linked, so returns depend on market conditions and the structure is more complex.",
     example:
       "An MLD may pay attractive returns only if a market condition is met.",
     howToChoose:
-      "Copy from the bond listing. If unclear, select Auto-detect or Not sure.",
-    backendNote: "Adds complexity and structure penalties.",
+      "Copy the bond type directly from the listing. If the structure is unclear, use Auto-detect.",
+    backendNote: "Adds structure complexity and risk penalties.",
     options: [
       {
         label: "Secured NCD",
@@ -255,12 +272,12 @@ export const bondDetailFields = [
     tooltip: "Whether assets support repayment.",
     meaning: "Whether the bond has asset support if the issuer defaults.",
     details:
-      "Secured does not guarantee safety, but it can improve recovery prospects compared with unsecured structures.",
+      "Secured means assets may support repayment if the issuer fails. Unsecured means no such backing. Even among secured bonds, the strength of collateral can differ.",
     example:
       "Land-backed and receivables-backed bonds can both be secured but differ in strength.",
     howToChoose:
-      "If the listing says secured, choose secured. Otherwise choose unsecured or Not sure.",
-    backendNote: "Recovery score input.",
+      "If the listing says secured, choose secured. If it is unclear, use Not sure rather than guessing.",
+    backendNote: "Used for recovery estimation.",
     options: ["Secured", "Partially Secured", "Unsecured", "Not sure"],
     notSureValue: "Not sure",
     autoValue: (values) =>
@@ -271,14 +288,14 @@ export const bondDetailFields = [
     label: "Maturity",
     type: "dropdown",
     required: true,
-    tooltip: "How long your money may stay locked in.",
+    tooltip: "How long your money will be locked.",
     meaning: "The maturity period of the bond.",
     details:
-      "Longer tenure means more uncertainty. If liquidity is weak, exiting early may be difficult.",
+      "Longer tenure means more uncertainty over time, and exiting early may still be difficult even if the bond is listed.",
     example: "A 2-year goal and a 5-year bond are usually a mismatch.",
     howToChoose:
-      "Choose the maturity bucket shown on the platform.",
-    backendNote: "Duration risk and fit scoring.",
+      "Choose the maturity bucket shown on the platform and make sure it broadly matches your holding horizon.",
+    backendNote: "Used in horizon fit scoring.",
     options: ["< 3 years", "3 - 5 years", "5 - 10 years", "> 10 years"],
     notSureValue: "3 - 5 years",
     autoValue: "3 - 5 years",
@@ -291,7 +308,7 @@ export const bondDetailFields = [
     tooltip: "How much return the bond offers.",
     meaning: "The coupon or yield the bond is offering.",
     details:
-      "Higher rates often signal higher risk. Comparing rates across similar bonds helps separate attractive pricing from warning signs.",
+      "Higher rates often mean higher risk, not free extra return. Comparing rates across similar bonds helps you judge whether the pricing is attractive or a warning sign.",
     example:
       "A 12% bond usually carries more risk than an 8% bond from a stronger issuer.",
     howToChoose:
@@ -311,10 +328,10 @@ export const bondDetailFields = [
     tooltip: "How you receive returns.",
     meaning: "Whether interest is paid regularly or accumulated until maturity.",
     details:
-      "Monthly or quarterly payouts are useful for income needs, while cumulative structures suit investors who can wait.",
-    example: "INR 100000 at 9% monthly gives cashflow; cumulative waits until maturity.",
+      "Monthly or quarterly payouts support regular income needs. Cumulative payout means the return is paid at maturity instead.",
+    example: "INR 100000 at 9% monthly can generate recurring income, while cumulative waits until maturity.",
     howToChoose:
-      "Match this to your income preference.",
+      "Choose based on how you want to receive returns from this bond.",
     backendNote: "Cashflow matching.",
     options: ["Monthly", "Quarterly", "Annual", "Cumulative", "Not sure"],
     notSureValue: "Quarterly",
@@ -325,10 +342,10 @@ export const bondDetailFields = [
     label: "Can you exit early?",
     type: "dropdown",
     required: true,
-    tooltip: "How difficult it may be to sell before maturity.",
+    tooltip: "Can you exit before maturity?",
     meaning: "The bond's likely exit flexibility before maturity.",
     details:
-      "Listed does not always mean liquid. Some bonds are technically tradable but hard to sell in practice.",
+      "Listed does not always mean easy to sell. Some bonds are technically tradable but still hard to exit in real market conditions.",
     example: "You may struggle to find a buyer even if the bond is listed.",
     howToChoose:
       "Copy the platform indication if available; otherwise use Not sure.",
@@ -345,11 +362,11 @@ export const bondDetailFields = [
     tooltip: "How large the bond issue is.",
     meaning: "The size of the bond issuance.",
     details:
-      "Larger issues often attract more scrutiny and participation, though size alone does not guarantee safety.",
+      "Larger issues often attract more participation and scrutiny. Smaller issues may get less attention, though size alone does not guarantee safety.",
     example: "An INR 50 Cr issue and an INR 1000 Cr issue can feel very different in market confidence.",
     howToChoose:
-      "Optional field. If the platform shows issue size, choose the matching bucket.",
-    backendNote: "Confidence boost.",
+      "This is optional. If the platform shows issue size, choose the matching bucket.",
+    backendNote: "Adds a confidence boost when available.",
     options: ["Small", "Medium", "Large", "Not sure"],
     notSureValue: "Not sure",
     autoValue: (values) => issuerCatalog[values.issuer]?.issueSize || "Not sure",

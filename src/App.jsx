@@ -1,11 +1,8 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import SitePreferencesBanner from "./components/SitePreferencesBanner";
-import TermsConsentModal from "./components/TermsConsentModal";
 import staticPages from "./data/staticPages";
-import ProtectedRoute from "./components/ProtectedRoute";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
@@ -37,18 +34,8 @@ function ScrollToHash() {
 
 function App() {
   const navigate = useNavigate();
-  const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
 
-  const openTermsModal = () => {
-    setIsTermsModalOpen(true);
-  };
-
-  const closeTermsModal = () => {
-    setIsTermsModalOpen(false);
-  };
-
-  const acceptTermsAndContinue = () => {
-    setIsTermsModalOpen(false);
+  const handleStartRating = () => {
     navigate("/calculator");
   };
 
@@ -59,23 +46,18 @@ function App() {
         <div className="absolute bottom-0 right-0 h-[24rem] w-[24rem] rounded-full bg-[#0f3d3e]/20 blur-3xl" />
       </div>
 
-      <Navbar onStartRating={openTermsModal} />
+      <Navbar onStartRating={handleStartRating} />
       <ScrollToHash />
 
-      <Suspense fallback={<div className="px-6 py-16 text-white/70">Loading...</div>}>
+      <Suspense
+        fallback={<div className="px-6 py-16 text-white/70">Loading...</div>}
+      >
         <Routes>
           <Route
             path="/"
-            element={<LandingPage onStartRating={openTermsModal} />}
+            element={<LandingPage onStartRating={handleStartRating} />}
           />
-          <Route
-            path="/calculator"
-            element={
-              <ProtectedRoute>
-                <BondCalculatorPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/calculator" element={<BondCalculatorPage />} />
           <Route path="/signin" element={<SignInPage />} />
           <Route
             path="/about"
@@ -93,17 +75,11 @@ function App() {
           />
           <Route
             path="*"
-            element={<LandingPage onStartRating={openTermsModal} />}
+            element={<LandingPage onStartRating={handleStartRating} />}
           />
         </Routes>
       </Suspense>
 
-      <SitePreferencesBanner />
-      <TermsConsentModal
-        isOpen={isTermsModalOpen}
-        onClose={closeTermsModal}
-        onAccept={acceptTermsAndContinue}
-      />
       <Footer />
     </div>
   );

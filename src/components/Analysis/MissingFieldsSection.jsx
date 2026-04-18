@@ -2,6 +2,23 @@ import { memo } from "react";
 import { fieldLabelMap } from "../../constants/formConstants";
 import { safeArray } from "../../helpers/errorHandlers";
 
+const accuracyImpactMap = {
+  amount: 6,
+  horizon: 9,
+  riskProfile: 11,
+  returnPreference: 7,
+  issuer: 12,
+  issuerType: 8,
+  creditRating: 12,
+  instrumentType: 9,
+  securityType: 9,
+  tenure: 10,
+  interestRate: 12,
+  payoutType: 8,
+  liquidity: 10,
+  issueSize: 5,
+};
+
 function MissingFieldsSection({ analysis }) {
   const missingRequired = safeArray(analysis.missingRequired);
 
@@ -13,11 +30,21 @@ function MissingFieldsSection({ analysis }) {
 
       <div className="mt-5">
         {missingRequired.length ? (
-          <ul className="list-disc space-y-2 pl-5 text-sm leading-7 text-white/70 marker:text-[#8fd7cf]">
+          <div className="space-y-3">
             {missingRequired.map((fieldId) => (
-              <li key={fieldId}>{fieldLabelMap[fieldId] ?? fieldId}</li>
+              <div
+                key={fieldId}
+                className="rounded-2xl border border-white/10 bg-[#103a3b] p-4"
+              >
+                <p className="text-sm font-semibold text-white">
+                  Add {fieldLabelMap[fieldId] ?? fieldId}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-white/60">
+                  Improves accuracy by roughly {accuracyImpactMap[fieldId] ?? 6}% and unlocks a clearer recommendation.
+                </p>
+              </div>
             ))}
-          </ul>
+          </div>
         ) : (
           <p className="text-sm font-medium text-[#8fd7cf]">
             All required fields completed

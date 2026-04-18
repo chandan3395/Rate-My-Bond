@@ -8,9 +8,9 @@ function LandingPage({ onStartRating }) {
   return (
     <main>
       <Hero onStartRating={onStartRating} />
+      <Preview />
       <Steps />
       <Features />
-      <Preview />
       <CTA onStartRating={onStartRating} />
     </main>
   );

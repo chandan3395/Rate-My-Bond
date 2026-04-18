@@ -84,6 +84,7 @@ function useBondForm() {
     handleAssist,
     clearInputs,
     loadSample,
+    missingRequiredFields,
     requiredCompleted,
     totalRequired: requiredFields.length,
     hasAnyInputs,

@@ -6,8 +6,12 @@ import {
 
 function CalculatorHeader({
   hasAnyInputs,
-  onPrimaryAction,
+  hasAnalysis,
+  currentStep,
+  totalSteps,
+  onLoadSample,
   onClearInputs,
+  onJumpToResults,
 }) {
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -21,16 +25,28 @@ function CalculatorHeader({
         <p className="mt-5 text-lg leading-8 text-white/70">
           {CALCULATOR_COPY.description}
         </p>
+        <p className="mt-4 text-sm font-medium text-white/45">
+          Guided workflow {currentStep + 1}/{totalSteps}
+        </p>
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
-          onClick={onPrimaryAction}
+          onClick={onLoadSample}
           className="rounded-full bg-[#8fd7cf] px-5 py-3 text-sm font-semibold text-[#062021] transition hover:scale-[1.02] hover:bg-[#9fe5de]"
         >
-          {hasAnyInputs ? FORM_ACTION_LABELS.rate : FORM_ACTION_LABELS.loadSample}
+          {FORM_ACTION_LABELS.loadSample}
         </button>
+        {hasAnyInputs && hasAnalysis ? (
+          <button
+            type="button"
+            onClick={onJumpToResults}
+            className="rounded-full border border-[#8fd7cf]/20 px-5 py-3 text-sm font-semibold text-[#8fd7cf] transition hover:bg-[#8fd7cf]/10"
+          >
+            View results
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={onClearInputs}

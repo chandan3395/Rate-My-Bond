@@ -1,3 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg: #081d1e;
+  --surface: #0d2b2c;
+  --panel: #103a3b;
+  --primary: #8fd7cf;
+  --success: #67d391;
+  --warning: #f2c66d;
+  --danger: #f39a8d;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    radial-gradient(circle at top, rgba(143, 215, 207, 0.08), transparent 28%),
+    var(--bg);
+  color: white;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(143, 215, 207, 0.3);
+  color: white;
+}

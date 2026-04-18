@@ -249,5 +249,6 @@ export function analyzeBond(values = {}) {
     bondQualityBreakdown,
     fitBreakdown,
     narrative,
+    summary: narrative.join(" "),
   };
 }

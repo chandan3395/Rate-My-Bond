@@ -19,7 +19,7 @@ function CTA({ onStartRating }) {
             onClick={onStartRating}
             className="inline-flex items-center justify-center rounded-full bg-[#8fd7cf] px-6 py-3 text-sm font-semibold text-[#062021] shadow-soft transition hover:scale-[1.02] hover:bg-[#9fe5de]"
           >
-            Get started
+            Analyze bond
           </button>
           <a
             href="#how-it-works"
