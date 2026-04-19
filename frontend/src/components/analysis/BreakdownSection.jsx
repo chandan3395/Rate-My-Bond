@@ -38,8 +38,16 @@ function BreakdownGroup({ title, items }) {
 }
 
 function BreakdownSection({ analysis }) {
-  const qualityItems = safeArray(analysis.bondQualityBreakdown);
-  const fitItems = safeArray(analysis.fitBreakdown);
+  const qualityItems = [
+    { label: "Issuer strength", score: analysis.issuerScore },
+    { label: "Bond structure", score: analysis.structureScore },
+    { label: "Liquidity", score: analysis.liquidityScore },
+    { label: "Return quality", score: analysis.returnScore },
+  ]
+
+  const fitItems = [
+    { label: "Profile fit", score: analysis.fitScore },
+  ]
 
   return (
     <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-soft">
@@ -47,7 +55,6 @@ function BreakdownSection({ analysis }) {
         <h2 className="text-2xl font-semibold text-white">
           Analysis Breakdown
         </h2>
-
         <Link to="/terms" className="text-[#8fd7cf]">
           View terms
         </Link>
@@ -58,7 +65,7 @@ function BreakdownSection({ analysis }) {
         <BreakdownGroup title="Investor fit inputs" items={fitItems} />
       </div>
     </div>
-  );
+  )
 }
 
 export default memo(BreakdownSection);

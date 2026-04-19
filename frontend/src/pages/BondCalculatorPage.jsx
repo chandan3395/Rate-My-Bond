@@ -101,24 +101,17 @@ function getErrorMessage(field, value) {
 }
 
 function buildAnalysisSummary(values, analysis) {
-  if (!values || !analysis || analysis.missingRequired.length) {
-    return "";
+  if (!values || !analysis) {
+    return ""
   }
-
-  const highlights = analysis.narrative
-    .slice(0, 3)
-    .map((line) => `- ${line}`)
-    .join("\n");
 
   return [
     `Bond: ${values.issuer || "Unknown issuer"}`,
     `Internal rating: ${analysis.ratingBand}`,
-    `Overall score: ${analysis.overallScore}/100`,
-    `Bond quality: ${analysis.bondQualityScore}/100`,
-    `Profile fit: ${analysis.fitScore}/100`,
-    "Highlights:",
-    highlights,
-  ].join("\n");
+    `Overall score: ${analysis.finalScore}/100`,
+    `Issuer score: ${analysis.issuerScore}/100`,
+    `Fit score: ${analysis.fitScore}/100`,
+  ].join("\n")
 }
 
 function StepRail({
@@ -242,10 +235,7 @@ function BondCalculatorPage() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("idle");
 
-  const analysis = useMemo(
-    () => analyzeBond(submittedValues ?? {}),
-    [submittedValues],
-  );
+  const [analysis, setAnalysis] = useState(null)
 
   const activeStep = CALCULATOR_STEPS[currentStep];
   const activeFields = useMemo(
@@ -283,10 +273,10 @@ function BondCalculatorPage() {
 
     return JSON.stringify(values) !== JSON.stringify(submittedValues);
   }, [submittedValues, values]);
-  const analysisSummary = useMemo(
-    () => buildAnalysisSummary(submittedValues, analysis),
-    [analysis, submittedValues],
-  );
+const analysisSummary = useMemo(
+  () => buildAnalysisSummary(submittedValues, analysis),
+  [analysis, submittedValues],
+);
 
   useEffect(() => {
     if (copyStatus !== "copied") {
@@ -311,7 +301,7 @@ function BondCalculatorPage() {
     });
   }, []);
 
-  const runAnalysis = useCallback(() => {
+  const runAnalysis = useCallback(async () => {
     setIsAnalyzing(true);
     setCopyStatus("idle");
 

@@ -29,7 +29,7 @@ function getScorePalette(score) {
 }
 
 function ScoreSection({ analysis }) {
-  const score = analysis.missingRequired.length ? 0 : analysis.overallScore;
+  const score = analysis.finalScore ?? 0;  
   const palette = getScorePalette(score);
   const circumference = 2 * Math.PI * 50;
   const strokeOffset = circumference - (score / 100) * circumference;
@@ -71,7 +71,7 @@ function ScoreSection({ analysis }) {
                 Score
               </span>
               <span className="mt-1 text-3xl font-semibold text-white">
-                {analysis.missingRequired.length ? "--" : analysis.overallScore}
+                {analysis.finalScore ?? "--"}
               </span>
             </div>
           </div>
@@ -83,12 +83,12 @@ function ScoreSection({ analysis }) {
                 analysis.ratingBand,
               )}`}
             >
-              {analysis.missingRequired.length ? "--" : analysis.ratingBand}
+              {analysis.ratingBand}
             </p>
             <span
               className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${palette.badge}`}
             >
-              {analysis.missingRequired.length ? "Awaiting inputs" : palette.label}
+              {palette.label}
             </span>
           </div>
         </div>
@@ -98,7 +98,7 @@ function ScoreSection({ analysis }) {
         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
           <p className="text-sm text-white/60">Bond quality</p>
           <p className="mt-2 text-2xl font-semibold text-white">
-            {analysis.bondQualityScore}
+            {analysis.issuerScore}
           </p>
         </div>
 
@@ -111,11 +111,8 @@ function ScoreSection({ analysis }) {
       </div>
 
       <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white/65">
-        {analysis.missingRequired.length ? (
-          <>Complete the missing required fields to unlock the analysis.</>
-        ) : (
-          <>The score blends bond quality with profile fit so the output is easier to act on, not just read.</>
-        )}
+        <>The score blends bond quality with profile fit so the output is easier to act on, not just read.</>
+
       </div>
     </div>
   );
