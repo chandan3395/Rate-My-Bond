@@ -6,7 +6,7 @@
 //   Hard to exit  → 0.02
 //   Not sure      → 0.01
 
-riskAdjustedReturn = (interestRate / 100) - expectedLoss - liquidityPenalty
+// riskAdjustedReturn = (interestRate / 100) - expectedLoss - liquidityPenalty
 
 import { getPD } from './pdCalculator.js'
 import { getLGD } from './lgdCalculator.js'
