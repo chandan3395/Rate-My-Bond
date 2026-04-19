@@ -7,7 +7,6 @@ import { ANALYSIS_PANEL_ID } from "../constants/formConstants";
 import { fieldMap } from "../constants/formConstants";
 import useBondForm from "../hooks/useBondForm";
 import { isValuePresent } from "../helpers/validation";
-import { analyzeBond } from "../utils/bondAnalysis";
 
 const CALCULATOR_STEPS = [
   {
@@ -316,11 +315,21 @@ function BondCalculatorPage() {
     setIsAnalyzing(true);
     setCopyStatus("idle");
 
-    window.setTimeout(() => {
-      setSubmittedValues({ ...values });
-      setIsAnalyzing(false);
-      window.requestAnimationFrame(scrollToResults);
-    }, 1100);
+    try {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values)
+    })
+    const result = await response.json()
+    setSubmittedValues({ ...values })
+    setAnalysis(result)
+  } catch (err) {
+    console.error(err)
+  } finally {
+    setIsAnalyzing(false)
+    window.requestAnimationFrame(scrollToResults)
+  }
   }, [scrollToResults, values]);
 
   const handleStartAnalysis = useCallback(() => {
