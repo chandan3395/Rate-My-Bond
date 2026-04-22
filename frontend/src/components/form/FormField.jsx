@@ -180,7 +180,7 @@ function renderBadgePreview(field, value) {
     return null;
   }
 
-  const selectedClassName = field.badgeMap[value] || field.badgeMap["Not sure"];
+  const selectedClassName = field.badgeMap[value] || "bg-white/5 text-white/65 border-white/10";
   const legend = field.badgeLegend ?? [];
 
   return (
@@ -249,13 +249,6 @@ function FormField({
         <div className="flex flex-wrap items-center gap-2 text-xs">
           <button
             type="button"
-            onClick={() => onAssist(field, "notSure")}
-            className="rounded-full border border-white/10 px-3 py-1.5 text-white/60 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
-          >
-            Not sure
-          </button>
-          <button
-            type="button"
             onClick={() => onAssist(field, "auto")}
             className="rounded-full border border-[#8fd7cf]/20 px-3 py-1.5 text-[#8fd7cf] transition hover:bg-[#8fd7cf]/10"
           >
@@ -304,10 +297,6 @@ function FormField({
               <p className="font-semibold text-white">How to choose</p>
               <p className="mt-1 leading-7">{field.howToChoose}</p>
             </div>
-          </div>
-          <div className="mt-4 rounded-2xl border border-white/10 bg-[#0d2b2c] px-4 py-3">
-            <p className="font-semibold text-white">Backend note</p>
-            <p className="mt-1 leading-7 text-white/60">{field.backendNote}</p>
           </div>
         </div>
       ) : null}

@@ -72,7 +72,6 @@ const creditRatingBadgeMap = {
   BBB: "bg-[#f2c66d]/15 text-[#f6dfb2] border-[#f2c66d]/25",
   "BBB-": "bg-[#f2c66d]/15 text-[#f6dfb2] border-[#f2c66d]/25",
   "BB and below": "bg-[#f39a8d]/15 text-[#f7c1b8] border-[#f39a8d]/25",
-  "Not sure": "bg-white/5 text-white/65 border-white/10",
 };
 
 export const userIntentFields = [
@@ -85,14 +84,12 @@ export const userIntentFields = [
     meaning: "How much capital you plan to allocate to this bond.",
     details:
       "This does not directly change bond quality, but it affects concentration risk. Larger allocations to risky bonds deserve more caution.",
-    example: "INR 100000 into a bond with low liquidity means exit flexibility matters more.",
+    example: "INR 1,00,000 into a bond with low liquidity means exit flexibility matters more.",
     howToChoose:
       "Enter the actual amount you may invest, even if it is only a trial estimate.",
-    backendNote: "Used for exposure checks and suitability warnings.",
     min: 10000,
     max: 1000000,
     step: 10000,
-    notSureValue: 100000,
     autoValue: 250000,
   },
   {
@@ -107,9 +104,7 @@ export const userIntentFields = [
     example: "A 2-year goal usually should not be matched with a 7-year bond.",
     howToChoose:
       "Pick the closest real-world time period you can commit to.",
-    backendNote: "Used for duration fit scoring.",
     options: ["< 1 year", "1 - 3 years", "3 - 5 years", "5+ years"],
-    notSureValue: "3 - 5 years",
     autoValue: "3 - 5 years",
   },
   {
@@ -124,9 +119,7 @@ export const userIntentFields = [
     example: "A conservative investor may reject a BBB bond even if the coupon is high.",
     howToChoose:
       "Choose based on how much loss or uncertainty you can tolerate emotionally and financially.",
-    backendNote: "Used as a suitability filter.",
     options: riskProfileOptions,
-    notSureValue: "Balanced",
     autoValue: "Balanced",
   },
   {
@@ -141,9 +134,7 @@ export const userIntentFields = [
     example: "If you want monthly cashflow, a cumulative payout bond may not fit.",
     howToChoose:
       "Pick the return pattern that matches how you actually plan to use the money.",
-    backendNote: "Used for payout matching.",
     options: returnPreferenceOptions,
-    notSureValue: "Balanced",
     autoValue: "Balanced",
   },
 ];
@@ -161,9 +152,7 @@ export const bondDetailFields = [
     example: "A large PSU and a small NBFC can have very different risk even if coupons look similar.",
     howToChoose:
       "Search the issuer name exactly as shown on the bond listing. Once selected, the system can auto-fill the connected fields.",
-    backendNote: "Pulls issuer-linked financial and risk data for enrichment.",
     options: Object.keys(issuerCatalog),
-    notSureValue: "Northstar Utilities",
     autoValue: "Northstar Utilities",
   },
   {
@@ -178,7 +167,6 @@ export const bondDetailFields = [
     example: "NBFC bonds may offer higher returns because sector risk is higher.",
     howToChoose:
       "This is usually auto-filled after you select the issuer. Change it only if the listing clearly shows something different.",
-    backendNote: "Sector risk multiplier.",
     options: [
       "PSU / Utility",
       "NBFC",
@@ -186,10 +174,10 @@ export const bondDetailFields = [
       "Infrastructure",
       "Real Estate",
       "Financial Services",
-      "Not sure",
     ],
-    notSureValue: "Not sure",
-    autoValue: (values) => issuerCatalog[values.issuer]?.issuerType || "Not sure",
+    autoValue: (values) => {
+  return issuerCatalog[values?.issuer]?.issuerType ?? null;
+  },
   },
   {
     id: "creditRating",
@@ -203,8 +191,7 @@ export const bondDetailFields = [
     example:
       "An AA bond at 9% versus an A bond at 11% usually means the higher return comes with higher risk.",
     howToChoose:
-      "Copy the rating from the bond page. If you do not see it clearly, use Not sure and let the system estimate.",
-    backendNote: "Maps to the base default probability proxy.",
+      "Copy the rating from the bond page. If you do not see it clearly, use Auto-detect.",
     options: [
       "AAA",
       "AA+",
@@ -217,13 +204,11 @@ export const bondDetailFields = [
       "BBB",
       "BBB-",
       "BB and below",
-      "Not sure",
     ],
     badgeMap: creditRatingBadgeMap,
-    badgeLegend: ["AAA", "AA", "A", "BBB", "BB and below", "Not sure"],
-    notSureValue: "Not sure",
+    badgeLegend: ["AAA", "AA", "A", "BBB", "BB and below"],
     autoValue: (values) =>
-      issuerCatalog[values.issuer]?.creditRating || "Not sure",
+      issuerCatalog[values?.issuer]?.creditRating ?? null,
   },
   {
     id: "instrumentType",
@@ -238,7 +223,6 @@ export const bondDetailFields = [
       "An MLD may pay attractive returns only if a market condition is met.",
     howToChoose:
       "Copy the bond type directly from the listing. If the structure is unclear, use Auto-detect.",
-    backendNote: "Adds structure complexity and risk penalties.",
     options: [
       {
         label: "Secured NCD",
@@ -255,13 +239,7 @@ export const bondDetailFields = [
         sublabel: "Returns depend on market-linked conditions",
         value: "MLD",
       },
-      {
-        label: "Not sure",
-        sublabel: "Let the system stay neutral",
-        value: "Not sure",
-      },
     ],
-    notSureValue: "Not sure",
     autoValue: "Secured NCD",
   },
   {
@@ -276,12 +254,10 @@ export const bondDetailFields = [
     example:
       "Land-backed and receivables-backed bonds can both be secured but differ in strength.",
     howToChoose:
-      "If the listing says secured, choose secured. If it is unclear, use Not sure rather than guessing.",
-    backendNote: "Used for recovery estimation.",
-    options: ["Secured", "Partially Secured", "Unsecured", "Not sure"],
-    notSureValue: "Not sure",
+      "If the listing says secured, choose secured. If it is unclear, use Auto-detect.",
+    options: ["Secured", "Partially Secured", "Unsecured"],
     autoValue: (values) =>
-      issuerCatalog[values.issuer]?.securityType || "Not sure",
+      issuerCatalog[values?.issuer]?.securityType ?? null,
   },
   {
     id: "tenure",
@@ -295,9 +271,7 @@ export const bondDetailFields = [
     example: "A 2-year goal and a 5-year bond are usually a mismatch.",
     howToChoose:
       "Choose the maturity bucket shown on the platform and make sure it broadly matches your holding horizon.",
-    backendNote: "Used in horizon fit scoring.",
     options: ["< 3 years", "3 - 5 years", "5 - 10 years", "> 10 years"],
-    notSureValue: "3 - 5 years",
     autoValue: "3 - 5 years",
   },
   {
@@ -313,11 +287,9 @@ export const bondDetailFields = [
       "A 12% bond usually carries more risk than an 8% bond from a stronger issuer.",
     howToChoose:
       "Copy the rate directly from the listing.",
-    backendNote: "Risk-return analysis.",
     min: 4,
     max: 18,
     step: 0.1,
-    notSureValue: 9,
     autoValue: (values) => issuerCatalog[values.issuer]?.interestRate || 9,
   },
   {
@@ -332,9 +304,7 @@ export const bondDetailFields = [
     example: "INR 100000 at 9% monthly can generate recurring income, while cumulative waits until maturity.",
     howToChoose:
       "Choose based on how you want to receive returns from this bond.",
-    backendNote: "Cashflow matching.",
-    options: ["Monthly", "Quarterly", "Annual", "Cumulative", "Not sure"],
-    notSureValue: "Quarterly",
+    options: ["Monthly", "Quarterly", "Annual", "Cumulative"],
     autoValue: "Quarterly",
   },
   {
@@ -348,10 +318,8 @@ export const bondDetailFields = [
       "Listed does not always mean easy to sell. Some bonds are technically tradable but still hard to exit in real market conditions.",
     example: "You may struggle to find a buyer even if the bond is listed.",
     howToChoose:
-      "Copy the platform indication if available; otherwise use Not sure.",
-    backendNote: "Liquidity penalty.",
-    options: ["Easy to exit", "Moderate", "Hard to exit", "Not sure"],
-    notSureValue: "Not sure",
+      "Copy the platform indication if available. If not, use Auto-detect.",
+    options: ["Easy to exit", "Moderate", "Hard to exit"],
     autoValue: "Moderate",
   },
   {
@@ -366,10 +334,8 @@ export const bondDetailFields = [
     example: "An INR 50 Cr issue and an INR 1000 Cr issue can feel very different in market confidence.",
     howToChoose:
       "This is optional. If the platform shows issue size, choose the matching bucket.",
-    backendNote: "Adds a confidence boost when available.",
-    options: ["Small", "Medium", "Large", "Not sure"],
-    notSureValue: "Not sure",
-    autoValue: (values) => issuerCatalog[values.issuer]?.issueSize || "Not sure",
+    options: ["Small", "Medium", "Large"],
+    autoValue: (values) => issuerCatalog[values.issuer]?.issueSize || "",
   },
 ];
 

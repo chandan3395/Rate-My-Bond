@@ -37,7 +37,7 @@ export function resolveAssistValue(field, mode, values) {
       ? typeof field.autoValue === "function"
         ? field.autoValue(values)
         : field.autoValue
-      : field.notSureValue;
+      : "";
 
   return nextValue ?? "";
 }
