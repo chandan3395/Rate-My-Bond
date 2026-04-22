@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState ,useRef} from "react";
 import AnalysisPanel from "../components/analysis/AnalysisPanel";
 import FormField from "../components/form/FormField";
 import CalculatorHeader from "../components/layout/CalculatorHeader";
@@ -235,6 +235,15 @@ function BondCalculatorPage() {
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("idle");
 
+  const stepTopRef = useRef(null);
+
+  const scrollToStepTop = useCallback(() => {
+    stepTopRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  }, []);
+
   const [analysis, setAnalysis] = useState(null)
 
   const activeStep = CALCULATOR_STEPS[currentStep];
@@ -302,25 +311,40 @@ const analysisSummary = useMemo(
   }, []);
 
   const runAnalysis = useCallback(async () => {
-    setIsAnalyzing(true);
-    setCopyStatus("idle");
+  setIsAnalyzing(true);
+  setCopyStatus("idle");
+  scrollToResults();
 
-    try {
+  const startedAt = performance.now();
+
+  try {
     const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(values)
-    })
-    const result = await response.json()
-    setSubmittedValues({ ...values })
-    setAnalysis(result)
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(values),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Analyze failed with ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    // dynamic time lapse
+    const elapsed = performance.now() - startedAt;
+    if (elapsed < 2000) {
+      await new Promise((resolve) => setTimeout(resolve, 2000 - elapsed));
+    }
+
+    setSubmittedValues({ ...values });
+    setAnalysis(result);
   } catch (err) {
-    console.error(err)
+    console.error(err);
   } finally {
-    setIsAnalyzing(false)
-    window.requestAnimationFrame(scrollToResults)
+    setIsAnalyzing(false);
   }
-  }, [scrollToResults, values]);
+}, [scrollToResults, values]);
+
 
   const handleStartAnalysis = useCallback(() => {
     if (missingRequiredFields.length) {
@@ -350,7 +374,9 @@ const analysisSummary = useMemo(
     setCurrentStep((stepIndex) =>
       Math.min(stepIndex + 1, CALCULATOR_STEPS.length - 1),
     );
-  }, [activeFields, markFieldsTouched, values]);
+
+    window.requestAnimationFrame(scrollToStepTop);
+  }, [activeFields, markFieldsTouched, scrollToStepTop, values]);
 
   const handlePreviousStep = useCallback(() => {
     setCurrentStep((stepIndex) => Math.max(stepIndex - 1, 0));
@@ -435,7 +461,7 @@ const analysisSummary = useMemo(
                 </div>
               </div>
 
-              <div className="mt-8">
+              <div ref={stepTopRef} className="mt-8">
                 {currentStep < 3 ? (
                   <div className="space-y-5">
                     {activeFields.map((field) => (
@@ -485,9 +511,10 @@ const analysisSummary = useMemo(
                     <button
                       type="button"
                       onClick={handleStartAnalysis}
+                      disabled={isAnalyzing}
                       className="rounded-full bg-[#8fd7cf] px-5 py-3 text-sm font-semibold text-[#062021] transition hover:scale-[1.01] hover:bg-[#9fe5de]"
                     >
-                      Analyze bond
+                      {isAnalyzing ? "Analyzing..." : "Analyze bond"}
                     </button>
                   )}
                 </div>

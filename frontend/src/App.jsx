@@ -3,6 +3,8 @@ import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import staticPages from "./data/staticPages";
+import ProtectedRoute from "./components/ProtectedRoute"
+import { useAuth } from "./context/AuthContext";
 
 const LandingPage = lazy(() => import("./pages/LandingPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
@@ -34,6 +36,11 @@ function ScrollToHash() {
 
 function App() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartRating = () => {
+    navigate(user ? "/calculator" : "/signin");
+  };
 
   const handleStartRating = () => {
     navigate("/calculator");
@@ -57,7 +64,14 @@ function App() {
             path="/"
             element={<LandingPage onStartRating={handleStartRating} />}
           />
-          <Route path="/calculator" element={<BondCalculatorPage />} />
+          <Route
+            path="/calculator"
+            element={
+              <ProtectedRoute>
+                <BondCalculatorPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/signin" element={<SignInPage />} />
           <Route
             path="/about"

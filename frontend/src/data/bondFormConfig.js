@@ -279,14 +279,14 @@ export const bondDetailFields = [
     label: "Interest rate",
     type: "percent",
     required: true,
-    tooltip: "How much return the bond offers.",
+    tooltip: "How much return the bond offers. Enter a value between 4% and 18%.",
     meaning: "The coupon or yield the bond is offering.",
     details:
       "Higher rates often mean higher risk, not free extra return. Comparing rates across similar bonds helps you judge whether the pricing is attractive or a warning sign.",
     example:
       "A 12% bond usually carries more risk than an 8% bond from a stronger issuer.",
-    howToChoose:
-      "Copy the rate directly from the listing.",
+    howToChoose: 
+      "Copy the rate directly from the listing. Allowed range: 4% to 18%.",
     min: 4,
     max: 18,
     step: 0.1,

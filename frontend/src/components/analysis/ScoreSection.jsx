@@ -1,6 +1,8 @@
 import { memo } from "react";
 import { getBondRatingTone } from "../../utils/bondAnalysis";
 
+
+// different background color for diffrent ranges of score
 function getScorePalette(score) {
   if (score >= 80) {
     return {

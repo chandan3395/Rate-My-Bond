@@ -5,6 +5,8 @@ import MissingFieldsSection from "./MissingFieldsSection";
 import NarrativeSection from "./NarrativeSection";
 import ScoreSection from "./ScoreSection";
 
+
+// right side --> shows the dashboard and the entries that are not completed
 function EmptyState({
   requiredCompleted,
   totalRequired,
@@ -39,6 +41,7 @@ function EmptyState({
   );
 }
 
+// This appears when the entries are done and the result is being analyzed
 function LoadingState() {
   return (
     <div className="rounded-[2rem] border border-white/10 bg-white/5 p-6 shadow-soft">

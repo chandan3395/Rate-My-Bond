@@ -1,5 +1,6 @@
 import { startTransition, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+
 import {
   onAuthStateChanged,
   signInWithPopup,
@@ -12,6 +13,10 @@ function SignInPage() {
   const [user, setUser] = useState(null);
   const [status, setStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const redirectTo = location.state?.from || "/calculator";
 
   useEffect(() => {
     if (!auth) {
@@ -40,6 +45,7 @@ function SignInPage() {
       await signInWithPopup(auth, googleProvider);
       startTransition(() => {
         setStatus("success");
+        navigate(redirectTo, { replace: true });
       });
     } catch (error) {
       setStatus("idle");
