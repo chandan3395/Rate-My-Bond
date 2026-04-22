@@ -42,10 +42,6 @@ function App() {
     navigate(user ? "/calculator" : "/signin");
   };
 
-  const handleStartRating = () => {
-    navigate("/calculator");
-  };
-
   return (
     <div className="relative isolate min-h-screen overflow-hidden bg-[#081d1e] font-sans text-white">
       <div className="absolute inset-0 -z-10 overflow-hidden">
