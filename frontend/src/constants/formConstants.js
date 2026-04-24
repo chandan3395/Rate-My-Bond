@@ -16,7 +16,7 @@ export const CALCULATOR_COPY = Object.freeze({
   eyebrow: "Guided bond analysis",
   title: "Rate a bond with guided inputs, not financial guesswork",
   description:
-    "Start with your investing intent, then describe the bond using structured fields. Every step explains what it means, how to choose it, and what the backend will do with it.",
+    "Start with your investing intent, then describe the bond using structured fields. Every step explains what it means and how to choose it",
   userIntentTitle: "User Intent",
   userIntentDescription:
     "These fields define your investing context before the bond is evaluated.",
