@@ -42,11 +42,6 @@ function StaticPage({ eyebrow, title, description }) {
             <p className="mt-6 max-w-2xl text-lg leading-8 text-white/70">
               {description}
             </p>
-
-            <div className="mt-10 rounded-2xl border border-dashed border-white/15 bg-[#0d2b2c]/75 p-6 text-sm leading-7 text-white/60">
-              Content placeholder. Replace this block with your final page copy
-              when you are ready.
-            </div>
           </>
         )}
 

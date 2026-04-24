@@ -1,12 +1,10 @@
 import { startTransition, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-
 import {
   onAuthStateChanged,
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-
 import { auth, googleProvider, hasFirebaseConfig } from "../lib/firebase";
 
 function SignInPage() {
