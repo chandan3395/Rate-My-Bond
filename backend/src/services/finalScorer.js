@@ -7,34 +7,21 @@
 import { getFitScore } from "./fitScorer.js";
 import { getIssuerScore } from "./scoringEngine.js";
 import { getExpectedLoss } from "./expectedLoss.js";
+import {
+  INSTRUMENT_SCORES,
+  LIQUIDITY_SCORES,
+  SECURITY_SCORES,
+} from "../modelConfig.js";
 
 export function analyzeBond(data) {
   const issuerScore = getIssuerScore(data);
-
-  const INSTRUMENT_SCORES = {
-    "Secured NCD": 82,
-    "Unsecured NCD": 56,
-    MLD: 45,
-    "Not sure": 58,
-  };
-
-  const SECURITY_SCORES = {
-    Secured: 84,
-    "Partially Secured": 68,
-    Unsecured: 48,
-    "Not sure": 58,
-  };
 
   const structureScore =
     ((INSTRUMENT_SCORES[data.instrumentType] ?? 58) +
       (SECURITY_SCORES[data.securityType] ?? 58)) /
     2;
 
-  let liquidityScore = 0;
-  if (data.liquidity === "Easy to exit") liquidityScore = 84;
-  else if (data.liquidity === "Moderate") liquidityScore = 66;
-  else if (data.liquidity === "Hard to exit") liquidityScore = 42;
-  else liquidityScore = 55;
+  const liquidityScore = LIQUIDITY_SCORES[data.liquidity] ?? 55;
 
   const { expectedLoss, riskAdjustedReturn } = getExpectedLoss(data);
   let returnScore = 0;

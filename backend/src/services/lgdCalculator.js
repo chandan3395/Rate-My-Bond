@@ -1,24 +1,12 @@
 // LGD = Loss Given Default --> if the company does default, how much of your money do you actually lose.
 // LGD = 1 - recoveryRate
 
-export function getLGD(data){
-    let recoveryRate = 0 ;
-    if(data.securityType === 'Secured')
-        recoveryRate += 0.65
-    else if(data.securityType === 'Partially Secured')
-        recoveryRate += 0.45
-    else if(data.securityType === 'Unsecured')
-        recoveryRate += 0.25
-    else if(data.securityType === 'Not sure')
-        recoveryRate += 0.40
+import { LGD_INSTRUMENT_ADJUST, LGD_RECOVERY_BASE } from "../modelConfig.js";
 
-    if(data.instrumentType === 'Secured NCD')
-        recoveryRate += 0.05
-    else if(data.instrumentType === 'MLD')
-        recoveryRate -= 0.1
-    else if(data.instrumentType === 'Unsecured NCD' || data.instrumentType === 'Not sure')
-        recoveryRate += 0
+export function getLGD(data) {
+  let recoveryRate = LGD_RECOVERY_BASE[data.securityType] ?? 0;
+  recoveryRate += LGD_INSTRUMENT_ADJUST[data.instrumentType] ?? 0;
 
-    recoveryRate = Math.min(0.85, recoveryRate) 
-    return 1 - recoveryRate    
+  recoveryRate = Math.min(0.85, recoveryRate);
+  return 1 - recoveryRate;
 }
