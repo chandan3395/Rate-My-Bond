@@ -75,9 +75,7 @@ function SignInPage() {
             Sign in and start rating with Google
           </h1>
           <p className="mt-5 text-lg leading-8 text-white/70">
-            Your sign-in experience is now routed to a dedicated page and ready
-            for Google OAuth. Once your Firebase credentials are added, your
-            team can authenticate without maintaining passwords manually.
+            You have to Sign in before you start using the calculator to rate your bonds.
           </p>
 
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
@@ -119,21 +117,6 @@ function SignInPage() {
           {errorMessage ? (
             <p className="mt-5 text-sm text-[#f7b3b3]">{errorMessage}</p>
           ) : null}
-
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
-            {[
-              "Google OAuth flow",
-              "Session-ready auth state",
-              "Environment-based setup",
-            ].map((item) => (
-              <div
-                key={item}
-                className="rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white/70"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
         </section>
 
         <section className="rounded-[2rem] border border-white/10 bg-[#0d2b2c]/85 p-8 shadow-soft">
@@ -151,12 +134,6 @@ function SignInPage() {
               <p className="mt-2 text-lg font-semibold text-white">
                 {user ? `Signed in as ${user.displayName || user.email}` : "Not signed in"}
               </p>
-            </div>
-
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-7 text-white/65">
-              {hasFirebaseConfig
-                ? "Firebase credentials detected. Google sign-in can be tested now."
-                : "Firebase credentials are not set yet. Add the values from .env.example before testing Google OAuth."}
             </div>
 
             {user ? (
