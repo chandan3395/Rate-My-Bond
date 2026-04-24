@@ -44,7 +44,7 @@ const staticPages = {
     description: [
       {
         heading: "Contact Us",
-        content: "Contact us at example@gmail.com",
+        content: "Contact us at ratemybond@gmail.com",
       },
     ],
     eyebrow: "Support",

@@ -234,6 +234,8 @@ function BondCalculatorPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isTermsModalOpen, setIsTermsModalOpen] = useState(false);
   const [copyStatus, setCopyStatus] = useState("idle");
+  const [serverFieldErrors, setServerFieldErrors] = useState({});
+  const [pendingScrollFieldId, setPendingScrollFieldId] = useState(null);
 
   const stepTopRef = useRef(null);
 
@@ -252,7 +254,7 @@ function BondCalculatorPage() {
     [activeStep],
   );
   const touchedFieldSet = useMemo(() => new Set(touchedFields), [touchedFields]);
-  const fieldErrors = useMemo(
+  const localFieldErrors = useMemo(
     () =>
       Object.fromEntries(
         CALCULATOR_STEPS.flatMap((step) =>
@@ -269,6 +271,13 @@ function BondCalculatorPage() {
         ),
       ),
     [touchedFieldSet, values],
+  );
+  const fieldErrors = useMemo(
+    () => ({
+      ...localFieldErrors,
+      ...serverFieldErrors,
+    }),
+    [localFieldErrors, serverFieldErrors],
   );
   const panelState = isAnalyzing
     ? "loading"
@@ -299,9 +308,71 @@ const analysisSummary = useMemo(
     return () => window.clearTimeout(timerId);
   }, [copyStatus]);
 
+  useEffect(() => {
+    if (!pendingScrollFieldId) {
+      return undefined;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      const anchor = document.getElementById(`field-anchor-${pendingScrollFieldId}`);
+
+      if (!anchor) {
+        return;
+      }
+
+      anchor.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setPendingScrollFieldId(null);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [currentStep, pendingScrollFieldId]);
+
   const markFieldsTouched = useCallback((fieldIds) => {
     setTouchedFields((current) => [...new Set([...current, ...fieldIds])]);
   }, []);
+
+  const clearServerError = useCallback((fieldId) => {
+    if (!fieldId) {
+      return;
+    }
+
+    setServerFieldErrors((current) => {
+      if (!current[fieldId]) {
+        return current;
+      }
+
+      const nextErrors = { ...current };
+      delete nextErrors[fieldId];
+      return nextErrors;
+    });
+  }, []);
+
+  const focusField = useCallback((fieldId) => {
+    if (!fieldId) {
+      return;
+    }
+
+    setPendingScrollFieldId(fieldId);
+  }, []);
+
+  const handleFieldChange = useCallback(
+    (fieldId, nextValue) => {
+      clearServerError(fieldId);
+      updateValue(fieldId, nextValue);
+    },
+    [clearServerError, updateValue],
+  );
+
+  const handleFieldAssist = useCallback(
+    (field, mode) => {
+      clearServerError(field?.id);
+      handleAssist(field, mode);
+    },
+    [clearServerError, handleAssist],
+  );
 
   const scrollToResults = useCallback(() => {
     document.getElementById(ANALYSIS_PANEL_ID)?.scrollIntoView({
@@ -313,6 +384,7 @@ const analysisSummary = useMemo(
   const runAnalysis = useCallback(async () => {
   setIsAnalyzing(true);
   setCopyStatus("idle");
+  setServerFieldErrors({});
   scrollToResults();
 
   const startedAt = performance.now();
@@ -325,7 +397,29 @@ const analysisSummary = useMemo(
     });
 
     if (!response.ok) {
-      throw new Error(`Analyze failed with ${response.status}`);
+      let errorPayload = null;
+
+      try {
+        errorPayload = await response.json();
+      } catch {
+        errorPayload = null;
+      }
+
+      if (errorPayload?.fields) {
+        const invalidFieldIds = Object.keys(errorPayload.fields);
+        const firstInvalidFieldId = invalidFieldIds[0];
+
+        setServerFieldErrors(errorPayload.fields);
+        markFieldsTouched(invalidFieldIds);
+
+        if (firstInvalidFieldId) {
+          const targetStep = getStepIndexForField(firstInvalidFieldId);
+          setCurrentStep(targetStep === -1 ? 0 : targetStep);
+          focusField(firstInvalidFieldId);
+        }
+      }
+
+      throw new Error(errorPayload?.error || `Analyze failed with ${response.status}`);
     }
 
     const result = await response.json();
@@ -343,19 +437,21 @@ const analysisSummary = useMemo(
   } finally {
     setIsAnalyzing(false);
   }
-}, [scrollToResults, values]);
+}, [focusField, markFieldsTouched, scrollToResults, values]);
 
 
   const handleStartAnalysis = useCallback(() => {
     if (missingRequiredFields.length) {
       markFieldsTouched(missingRequiredFields);
-      const targetStep = getStepIndexForField(missingRequiredFields[0]);
+      const firstMissingFieldId = missingRequiredFields[0];
+      const targetStep = getStepIndexForField(firstMissingFieldId);
       setCurrentStep(targetStep === -1 ? 0 : targetStep);
+      focusField(firstMissingFieldId);
       return;
     }
 
     setIsTermsModalOpen(true);
-  }, [markFieldsTouched, missingRequiredFields]);
+  }, [focusField, markFieldsTouched, missingRequiredFields]);
 
   const handleSelectStep = useCallback((targetIndex) => {
     setCurrentStep(targetIndex);
@@ -368,6 +464,7 @@ const analysisSummary = useMemo(
 
     if (missingInStep.length) {
       markFieldsTouched(missingInStep);
+      focusField(missingInStep[0]);
       return;
     }
 
@@ -376,7 +473,7 @@ const analysisSummary = useMemo(
     );
 
     window.requestAnimationFrame(scrollToStepTop);
-  }, [activeFields, markFieldsTouched, scrollToStepTop, values]);
+  }, [activeFields, focusField, markFieldsTouched, scrollToStepTop, values]);
 
   const handlePreviousStep = useCallback(() => {
     setCurrentStep((stepIndex) => Math.max(stepIndex - 1, 0));
@@ -389,6 +486,8 @@ const analysisSummary = useMemo(
     setTouchedFields([]);
     setOpenHelpId(null);
     setCopyStatus("idle");
+    setServerFieldErrors({});
+    setPendingScrollFieldId(null);
   }, [loadSample]);
 
   const handleClearInputs = useCallback(() => {
@@ -400,6 +499,8 @@ const analysisSummary = useMemo(
     setIsAnalyzing(false);
     setIsTermsModalOpen(false);
     setCopyStatus("idle");
+    setServerFieldErrors({});
+    setPendingScrollFieldId(null);
   }, [clearInputs]);
 
   const handleCopySummary = useCallback(async () => {
@@ -465,16 +566,17 @@ const analysisSummary = useMemo(
                 {currentStep < 3 ? (
                   <div className="space-y-5">
                     {activeFields.map((field) => (
-                      <FormField
-                        key={field.id}
-                        field={field}
-                        value={values[field.id]}
-                        onChange={updateValue}
-                        onAssist={handleAssist}
-                        openHelpId={openHelpId}
-                        setOpenHelpId={setOpenHelpId}
-                        error={fieldErrors[field.id]}
-                      />
+                      <div key={field.id} id={`field-anchor-${field.id}`}>
+                        <FormField
+                          field={field}
+                          value={values[field.id]}
+                          onChange={handleFieldChange}
+                          onAssist={handleFieldAssist}
+                          openHelpId={openHelpId}
+                          setOpenHelpId={setOpenHelpId}
+                          error={fieldErrors[field.id]}
+                        />
+                      </div>
                     ))}
                   </div>
                 ) : (
