@@ -153,6 +153,3 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=
 VITE_FIREBASE_APP_ID=
 VITE_API_URL=
 ```
-```
-
-Frontend runs on `http://localhost:5173`, backend on `http://localhost:3000`.
