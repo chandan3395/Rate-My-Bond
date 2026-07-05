@@ -3,8 +3,9 @@ import cors from 'cors'
 import dotenv from 'dotenv'
 import analyzeRouter from './src/routes/analyze.js'
 import rateLimit from 'express-rate-limit'
+import issuersRouter from './src/routes/issuers.js'
+import mongoose from 'mongoose'
 
-dotenv.config()
 
 const app = express() 
 const limiter = rateLimit({
@@ -25,11 +26,21 @@ app.get('/',(req,res) => {
 }) ;
 
 app.use('/api/analyze', analyzeRouter)
+app.use('/api/issuers', issuersRouter)
+dotenv.config()
 
 app.use((err, req, res, next) => {
   console.error(err.stack)
-  res.status(500).json({ error: 'Internal server error' })
+
+  res.status(err.status || 500).json({
+    success: false,
+    message: err.message || 'Internal server error'
+  })
 })
+
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB error:', err))
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
