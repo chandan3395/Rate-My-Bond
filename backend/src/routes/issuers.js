@@ -1,9 +1,11 @@
 import express from 'express'
 import Issuer from '../models/Issuer.js'
+import { ApiError } from '../utils/ApiError.js'
 
 const router = express.Router()
 
-router.get('/', async (req, res) => {
+// Issuer catalog served FROM MongoDB. Mounted behind verifyToken (see app.js).
+router.get('/', async (req, res, next) => {
   try {
     const issuers = await Issuer.find({}, {
       issuer: 1,
@@ -19,7 +21,7 @@ router.get('/', async (req, res) => {
 
     res.json(issuers)
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch issuers' })
+    next(new ApiError(500, 'Failed to fetch issuers'))
   }
 })
 

@@ -5,7 +5,7 @@ import { useAuth } from "../context/AuthContext";
 import { auth } from "../lib/firebase";
 import Logo from "./Logo";
 
-const navItems = [
+const baseNavItems = [
   { label: "Home", to: "/#home" },
   { label: "Calculator", to: "/calculator" },
   { label: "About", to: "/about" },
@@ -14,6 +14,11 @@ const navItems = [
 function Navbar({ onStartRating }) {
   const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  // "History" is only meaningful (and reachable) when signed in.
+  const navItems = user
+    ? [...baseNavItems, { label: "History", to: "/history" }]
+    : baseNavItems;
 
   const handleSignOut = async () => {
     await signOut(auth);

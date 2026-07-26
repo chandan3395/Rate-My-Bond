@@ -1,12 +1,6 @@
-export function getBondRatingBand(score) {
-  if (score >= 85) return "AAA";
-  if (score >= 75) return "AA";
-  if (score >= 65) return "A";
-  if (score >= 55) return "BBB";
-  if (score >= 45) return "BB";
-  return "B / Junk";
-}
-
+// Rating bands and scores are computed ONLY by the backend scoring engine.
+// This module holds purely presentational helpers that map the backend's
+// values to UI tones — it must not recompute any score or rating.
 export function getBondRatingTone(rating) {
   switch (rating) {
     case "AAA":

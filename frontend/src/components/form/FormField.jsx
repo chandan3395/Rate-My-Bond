@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { issuerCatalog } from "../../data/bondFormConfig";
 import { validateNumericField } from "../../helpers/validation";
 
 function getInputClasses(hasError) {
@@ -89,7 +88,7 @@ function renderControl(field, value, onChange, hasError) {
           className={inputClasses}
         />
         <datalist id={issuerOptionsId}>
-          {Object.keys(issuerCatalog).map((issuer) => (
+          {(field.options ?? []).map((issuer) => (
             <option key={issuer} value={issuer} />
           ))}
         </datalist>

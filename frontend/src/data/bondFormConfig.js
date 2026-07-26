@@ -1,40 +1,7 @@
-export const issuerCatalog = {
-  "Northstar Utilities": {
-    issuerType: "PSU / Utility",
-    creditRating: "AA",
-    interestRate: 8.4,
-    issueSize: "Large",
-    securityType: "Secured",
-  },
-  "Apex Power Grid": {
-    issuerType: "Infrastructure",
-    creditRating: "AA-",
-    interestRate: 9.1,
-    issueSize: "Large",
-    securityType: "Secured",
-  },
-  "Crest Housing Finance": {
-    issuerType: "NBFC",
-    creditRating: "A+",
-    interestRate: 10.2,
-    issueSize: "Medium",
-    securityType: "Secured",
-  },
-  "BlueRiver Logistics": {
-    issuerType: "Manufacturing / Logistics",
-    creditRating: "A",
-    interestRate: 9.8,
-    issueSize: "Medium",
-    securityType: "Partially Secured",
-  },
-  "Evergreen Renewables": {
-    issuerType: "Infrastructure",
-    creditRating: "BBB+",
-    interestRate: 11.1,
-    issueSize: "Small",
-    securityType: "Partially Secured",
-  },
-};
+// NOTE: The issuer catalog is served FROM MongoDB via GET /api/issuers and
+// loaded at runtime (see hooks/useIssuers.js). The issuer field's options and
+// the auto-detect below are fed that fetched data — there is no static issuer
+// list in the app.
 
 export const riskProfileOptions = [
   {
@@ -152,8 +119,10 @@ export const bondDetailFields = [
     example: "A large PSU and a small NBFC can have very different risk even if coupons look similar.",
     howToChoose:
       "Search the issuer name exactly as shown on the bond listing. Once selected, the system can auto-fill the connected fields.",
-    options: Object.keys(issuerCatalog),
-    autoValue: "Northstar Utilities",
+    // Options are injected at runtime from the Mongo-backed issuer list.
+    options: [],
+    // Auto-detect on the issuer field itself is a no-op (keeps the typed name).
+    autoValue: (values) => values?.issuer ?? "",
   },
   {
     id: "issuerType",
@@ -175,9 +144,8 @@ export const bondDetailFields = [
       "Real Estate",
       "Financial Services",
     ],
-    autoValue: (values) => {
-  return issuerCatalog[values?.issuer]?.issuerType ?? null;
-  },
+    autoValue: (values, issuerMap) =>
+      issuerMap?.[values?.issuer]?.issuerType ?? null,
   },
   {
     id: "creditRating",
@@ -207,8 +175,8 @@ export const bondDetailFields = [
     ],
     badgeMap: creditRatingBadgeMap,
     badgeLegend: ["AAA", "AA", "A", "BBB", "BB and below"],
-    autoValue: (values) =>
-      issuerCatalog[values?.issuer]?.creditRating ?? null,
+    autoValue: (values, issuerMap) =>
+      issuerMap?.[values?.issuer]?.creditRating ?? null,
   },
   {
     id: "instrumentType",
@@ -256,8 +224,8 @@ export const bondDetailFields = [
     howToChoose:
       "If the listing says secured, choose secured. If it is unclear, use Auto-detect.",
     options: ["Secured", "Partially Secured", "Unsecured"],
-    autoValue: (values) =>
-      issuerCatalog[values?.issuer]?.securityType ?? null,
+    autoValue: (values, issuerMap) =>
+      issuerMap?.[values?.issuer]?.securityType ?? null,
   },
   {
     id: "tenure",
@@ -290,7 +258,10 @@ export const bondDetailFields = [
     min: 4,
     max: 18,
     step: 0.1,
-    autoValue: (values) => issuerCatalog[values.issuer]?.interestRate || 9,
+    autoValue: (values, issuerMap) => {
+      const record = issuerMap?.[values?.issuer];
+      return record?.couponRate ?? record?.yieldToMaturity ?? 9;
+    },
   },
   {
     id: "payoutType",
@@ -335,7 +306,8 @@ export const bondDetailFields = [
     howToChoose:
       "This is optional. If the platform shows issue size, choose the matching bucket.",
     options: ["Small", "Medium", "Large"],
-    autoValue: (values) => issuerCatalog[values.issuer]?.issueSize || "",
+    autoValue: (values, issuerMap) =>
+      issuerMap?.[values?.issuer]?.issueSize ?? "",
   },
 ];
 

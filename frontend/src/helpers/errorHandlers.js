@@ -27,7 +27,7 @@ export function getFieldDefinition(fieldId, fieldDefinitions) {
   return fieldDefinitions[fieldId] ?? null;
 }
 
-export function resolveAssistValue(field, mode, values) {
+export function resolveAssistValue(field, mode, values, issuerMap = {}) {
   if (!field) {
     return "";
   }
@@ -35,7 +35,7 @@ export function resolveAssistValue(field, mode, values) {
   const nextValue =
     mode === "auto"
       ? typeof field.autoValue === "function"
-        ? field.autoValue(values)
+        ? field.autoValue(values, issuerMap)
         : field.autoValue
       : "";
 
