@@ -15,7 +15,7 @@ import {
   validateRequiredFields,
 } from "../helpers/validation";
 
-function useBondForm() {
+function useBondForm(issuerMap = {}) {
   const [values, setValues] = useState(createEmptyFormValues);
 
   const updateValue = useCallback((fieldId, nextValue) => {
@@ -49,10 +49,10 @@ function useBondForm() {
         return;
       }
 
-      const nextValue = resolveAssistValue(field, mode, values);
+      const nextValue = resolveAssistValue(field, mode, values, issuerMap);
       updateValue(field.id, nextValue);
     },
-    [updateValue, values],
+    [updateValue, values, issuerMap],
   );
 
   const clearInputs = useCallback(() => {

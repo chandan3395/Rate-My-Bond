@@ -1,48 +1,63 @@
-import express from 'express'
-import cors from 'cors'
-import dotenv from 'dotenv'
-import analyzeRouter from './src/routes/analyze.js'
-import rateLimit from 'express-rate-limit'
-import issuersRouter from './src/routes/issuers.js'
-import mongoose from 'mongoose'
+import 'dotenv/config'
 
+import http from 'node:http'
+import { createApp } from './src/app.js'
+import { validateEnv } from './src/config/validateEnv.js'
+import { connectDB, disconnectDB } from './src/config/db.js'
+import { initFirebase } from './src/config/firebase.js'
+import { logger } from './src/utils/logger.js'
 
-const app = express() 
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 30,
-  message: { error: 'Too many requests' }
-})
+const SHUTDOWN_TIMEOUT_MS = 10000
 
-app.use(cors({
-    origin: process.env.FRONTEND_URL
-})) ;
+async function bootstrap() {
+  // Fail fast if configuration is incomplete.
+  validateEnv()
 
-app.use(express.json()) 
-app.use('/api/analyze', limiter)
+  // Initialize Firebase Admin up front so credential problems surface at boot.
+  initFirebase()
 
-app.get('/',(req,res) => {
-    res.json({message: 'rate my bond API is running'})
-}) ;
+  // Only start listening once Mongo is reachable.
+  await connectDB(process.env.MONGO_URI)
 
-app.use('/api/analyze', analyzeRouter)
-app.use('/api/issuers', issuersRouter)
-dotenv.config()
+  const app = createApp()
+  const server = http.createServer(app)
 
-app.use((err, req, res, next) => {
-  console.error(err.stack)
-
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || 'Internal server error'
+  const PORT = process.env.PORT || 3000
+  server.listen(PORT, () => {
+    logger.info(`backend running on port ${PORT}`)
   })
+
+  // Graceful shutdown: stop accepting connections, close the HTTP server, then
+  // close Mongo. A hard timeout forces exit if something hangs.
+  let shuttingDown = false
+  const shutdown = async (signal) => {
+    if (shuttingDown) return
+    shuttingDown = true
+    logger.info(`${signal} received, shutting down gracefully`)
+
+    const forceTimer = setTimeout(() => {
+      logger.error('Graceful shutdown timed out, forcing exit')
+      process.exit(1)
+    }, SHUTDOWN_TIMEOUT_MS)
+    forceTimer.unref()
+
+    server.close(async () => {
+      try {
+        await disconnectDB()
+        clearTimeout(forceTimer)
+        process.exit(0)
+      } catch (err) {
+        logger.error({ err }, 'Error during shutdown')
+        process.exit(1)
+      }
+    })
+  }
+
+  process.on('SIGTERM', () => shutdown('SIGTERM'))
+  process.on('SIGINT', () => shutdown('SIGINT'))
+}
+
+bootstrap().catch((err) => {
+  logger.error({ err }, 'Failed to start server')
+  process.exit(1)
 })
-
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB error:', err))
-
-const PORT = process.env.PORT || 3000
-app.listen(PORT, () => {
-    console.log(`backend running on port ${PORT}`)
-});

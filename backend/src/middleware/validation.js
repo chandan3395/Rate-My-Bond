@@ -1,3 +1,5 @@
+import { ApiError } from '../utils/ApiError.js';
+
 export function validateBondInput(req, res, next) {
   const data = req.body
   const errors = {}
@@ -26,7 +28,7 @@ export function validateBondInput(req, res, next) {
   }
 
   if (Object.keys(errors).length > 0) {
-    return res.status(400).json({ error: 'Validation failed', fields: errors })
+    return next(new ApiError(400, 'Validation failed', { fields: errors }))
   }
 
   next()

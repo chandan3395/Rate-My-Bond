@@ -10,6 +10,8 @@ const LandingPage = lazy(() => import("./pages/LandingPage"));
 const SignInPage = lazy(() => import("./pages/SignInPage"));
 const StaticPage = lazy(() => import("./pages/StaticPage"));
 const BondCalculatorPage = lazy(() => import("./pages/BondCalculatorPage"));
+const HistoryPage = lazy(() => import("./pages/HistoryPage"));
+const AnalysisDetailPage = lazy(() => import("./pages/AnalysisDetailPage"));
 
 function ScrollToHash() {
   const location = useLocation();
@@ -65,6 +67,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <BondCalculatorPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history"
+            element={
+              <ProtectedRoute>
+                <HistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/history/:id"
+            element={
+              <ProtectedRoute>
+                <AnalysisDetailPage />
               </ProtectedRoute>
             }
           />

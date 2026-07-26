@@ -6,7 +6,9 @@ import TermsConsentModal from "../components/TermsConsentModal";
 import { ANALYSIS_PANEL_ID } from "../constants/formConstants";
 import { fieldMap } from "../constants/formConstants";
 import useBondForm from "../hooks/useBondForm";
+import useIssuers from "../hooks/useIssuers";
 import { isValuePresent } from "../helpers/validation";
+import { api } from "../lib/api";
 
 const CALCULATOR_STEPS = [
   {
@@ -216,6 +218,7 @@ function ReviewSection({ values }) {
 }
 
 function BondCalculatorPage() {
+  const { issuers, issuerMap } = useIssuers();
   const {
     values,
     updateValue,
@@ -226,7 +229,7 @@ function BondCalculatorPage() {
     requiredCompleted,
     totalRequired,
     hasAnyInputs,
-  } = useBondForm();
+  } = useBondForm(issuerMap);
   const [openHelpId, setOpenHelpId] = useState(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [touchedFields, setTouchedFields] = useState([]);
@@ -250,8 +253,16 @@ function BondCalculatorPage() {
 
   const activeStep = CALCULATOR_STEPS[currentStep];
   const activeFields = useMemo(
-    () => activeStep.fieldIds.map((fieldId) => fieldMap[fieldId]),
-    [activeStep],
+    () =>
+      activeStep.fieldIds.map((fieldId) => {
+        const field = fieldMap[fieldId];
+        // Feed the issuer search field its options from the Mongo-backed list.
+        if (fieldId === "issuer") {
+          return { ...field, options: issuers };
+        }
+        return field;
+      }),
+    [activeStep, issuers],
   );
   const touchedFieldSet = useMemo(() => new Set(touchedFields), [touchedFields]);
   const localFieldErrors = useMemo(
@@ -390,39 +401,8 @@ const analysisSummary = useMemo(
   const startedAt = performance.now();
 
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/analyze`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(values),
-    });
-
-    if (!response.ok) {
-      let errorPayload = null;
-
-      try {
-        errorPayload = await response.json();
-      } catch {
-        errorPayload = null;
-      }
-
-      if (errorPayload?.fields) {
-        const invalidFieldIds = Object.keys(errorPayload.fields);
-        const firstInvalidFieldId = invalidFieldIds[0];
-
-        setServerFieldErrors(errorPayload.fields);
-        markFieldsTouched(invalidFieldIds);
-
-        if (firstInvalidFieldId) {
-          const targetStep = getStepIndexForField(firstInvalidFieldId);
-          setCurrentStep(targetStep === -1 ? 0 : targetStep);
-          focusField(firstInvalidFieldId);
-        }
-      }
-
-      throw new Error(errorPayload?.error || `Analyze failed with ${response.status}`);
-    }
-
-    const result = await response.json();
+    // Goes through the authenticated API client (adds the Bearer token).
+    const result = await api.post("/api/analyze", values);
 
     // dynamic time lapse
     const elapsed = performance.now() - startedAt;
@@ -433,6 +413,22 @@ const analysisSummary = useMemo(
     setSubmittedValues({ ...values });
     setAnalysis(result);
   } catch (err) {
+    // Backend validation errors arrive as { message, fields, requestId }.
+    const fields = err?.data?.fields;
+    if (fields) {
+      const invalidFieldIds = Object.keys(fields);
+      const firstInvalidFieldId = invalidFieldIds[0];
+
+      setServerFieldErrors(fields);
+      markFieldsTouched(invalidFieldIds);
+
+      if (firstInvalidFieldId) {
+        const targetStep = getStepIndexForField(firstInvalidFieldId);
+        setCurrentStep(targetStep === -1 ? 0 : targetStep);
+        focusField(firstInvalidFieldId);
+      }
+    }
+
     console.error(err);
   } finally {
     setIsAnalyzing(false);
